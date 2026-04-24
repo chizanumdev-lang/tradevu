@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tradevu Internal Dashboard - Neo Brutalist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,FILL@0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-yellow": "#FACC15",
+                        "primary-blue": "#2563EB",
+                        "primary-crimson": "#DC2626",
+                        "neo-black": "#000000",
+                    },
+                    fontFamily: {
+                        "h1": ["Plus Jakarta Sans", "sans-serif"],
+                        "h2": ["Plus Jakarta Sans", "sans-serif"],
+                        "h3": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Lato", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'neo': '8px 8px 0px 0px rgba(0,0,0,1)',
+                        'neo-sm': '4px 4px 0px 0px rgba(0,0,0,1)',
+                    }
+                }
+            }
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-white text-neo-black;
+                background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+                background-size: 24px 24px;
+            }
+        }
+        @layer components {
+            .brutal-text-shadow {
+                text-shadow: 3px 3px 0px rgba(0,0,0,1);
+            }
+            .brutal-border {
+                @apply border-4 border-neo-black;
+            }
+            .brutal-btn-yellow {
+                @apply bg-primary-yellow brutal-border shadow-neo-sm px-4 py-2 font-bold uppercase;
+            }
+            .brutal-icon {
+                @apply brutal-border bg-white p-2 inline-flex items-center justify-center;
+            }
+        }
+    </style>
+</head>
+<body class="font-body antialiased min-h-screen">
+<main class="container mx-auto px-6 py-12 max-w-screen-2xl">
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16 items-start">
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-center border-b-4 border-neo-black pb-2">
+<span class="text-xs font-black uppercase tracking-widest text-primary-crimson">Monthly Customers</span>
+<span class="material-symbols-outlined brutal-icon scale-75">group</span>
+</div>
+<div class="py-4">
+<div class="font-h2 text-7xl font-extrabold brutal-text-shadow text-primary-blue">342</div>
+<div class="flex items-center mt-4 bg-primary-yellow brutal-border px-3 py-1 w-fit shadow-neo-sm">
+<span class="material-symbols-outlined text-sm mr-1 font-black">trending_up</span>
+<span class="text-xs font-black uppercase">+12% vs last mo</span>
+</div>
+</div>
+<div class="mt-8 border-l-8 border-primary-yellow pl-6">
+<div class="flex justify-between items-center mb-4">
+<span class="text-xs font-black uppercase tracking-widest text-primary-blue">Launch Readiness</span>
+<span class="material-symbols-outlined text-primary-crimson fill">star</span>
+</div>
+<div class="font-h3 text-2xl font-black brutal-text-shadow text-white bg-neo-black px-2 py-1 inline-block">Q3 Launch Verified</div>
+<div class="w-full brutal-border h-6 bg-white mt-6 relative overflow-hidden">
+<div class="bg-primary-crimson h-full w-[90%] border-r-4 border-neo-black"></div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center py-12 brutal-border bg-white shadow-neo">
+<span class="text-xs font-black text-neo-black uppercase tracking-[0.3em] mb-12 border-b-2 border-neo-black">Annual Revenue Goal</span>
+<div class="relative w-40 h-20 mb-8">
+<svg class="w-full h-full overflow-visible" viewBox="0 0 100 50">
+<defs>
+<linearGradient id="brutalGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#2563EB"></stop>
+<stop offset="100%" stop-color="#DC2626"></stop>
+</linearGradient>
+<filter height="200%" id="brutalGlow" width="200%" x="-50%" y="-50%">
+<fedropshadow dx="0" dy="0" flood-color="#DC2626" stdDeviation="2"></fedropshadow>
+</filter>
+</defs>
+<path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#000000" stroke-dasharray="2,2" stroke-width="2"></path>
+<path d="M 10 50 A 40 40 0 0 1 78.28 21.72" fill="none" stroke="url(#brutalGradient)" stroke-linecap="square" stroke-width="3"></path>
+<circle class="filter" cx="78.28" cy="21.72" fill="#000000" r="4" style="filter: url(#brutalGlow)"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-end pt-4">
+<span class="text-4xl font-black brutal-text-shadow text-primary-yellow">$1.0M</span>
+<span class="text-[10px] font-black bg-neo-black text-white px-2 mt-2 uppercase tracking-tighter">75% Collected</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex justify-between items-center border-b-4 border-neo-black pb-2">
+<span class="text-xs font-black uppercase tracking-widest text-primary-crimson">Total Customers</span>
+<span class="material-symbols-outlined brutal-icon scale-75">public</span>
+</div>
+<div>
+<div class="font-h2 text-7xl font-extrabold brutal-text-shadow text-primary-blue">8,901</div>
+<div class="text-xs font-black text-neo-black mt-2 uppercase underline decoration-4 decoration-primary-yellow">Verified Platform Users</div>
+<div class="mt-12 pt-8 border-t-4 border-neo-black border-dashed">
+<div class="text-xs font-black uppercase tracking-widest mb-2 text-primary-crimson">Active Trial Users</div>
+<div class="font-h2 text-5xl text-primary-blue font-black brutal-text-shadow">1,240</div>
+</div>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-16">
+<article class="flex flex-col">
+<div class="flex items-center gap-4 mb-8">
+<div class="brutal-icon bg-primary-yellow">
+<span class="material-symbols-outlined text-neo-black font-black">settings</span>
+</div>
+<h3 class="font-h3 text-4xl text-neo-black font-black uppercase italic">Ops</h3>
+</div>
+<div class="mb-8">
+<div class="text-xs text-primary-crimson uppercase font-black tracking-[0.2em] mb-2">Weekly Goal</div>
+<div class="text-9xl font-h2 font-black text-neo-black brutal-text-shadow leading-none">10</div>
+<p class="text-xs font-black uppercase mt-4 text-primary-blue">Units / Week</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="brutal-border p-4 bg-primary-yellow shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1">Visits</div>
+<div class="text-2xl font-black">89</div>
+</div>
+<div class="brutal-border p-4 bg-white shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1">Conversion</div>
+<div class="text-2xl font-black">45%</div>
+</div>
+</div>
+</article>
+<article class="flex flex-col">
+<div class="flex items-center gap-4 mb-8">
+<div class="brutal-icon bg-primary-blue text-white">
+<span class="material-symbols-outlined font-black">payments</span>
+</div>
+<h3 class="font-h3 text-4xl text-neo-black font-black uppercase italic">Pay</h3>
+</div>
+<div class="mb-8">
+<div class="text-xs text-primary-crimson uppercase font-black tracking-[0.2em] mb-2">Weekly Goal</div>
+<div class="text-9xl font-h2 font-black text-neo-black brutal-text-shadow leading-none">10</div>
+<p class="text-xs font-black uppercase mt-4 text-primary-blue">Convs / Week</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="brutal-border p-4 bg-white shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1">Conversations</div>
+<div class="text-2xl font-black">28</div>
+</div>
+<div class="brutal-border p-4 bg-primary-yellow shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1">Conversion</div>
+<div class="text-2xl font-black">32%</div>
+</div>
+</div>
+</article>
+<article class="flex flex-col">
+<div class="flex items-center gap-4 mb-8">
+<div class="brutal-icon bg-primary-crimson text-white">
+<span class="material-symbols-outlined font-black">code</span>
+</div>
+<h3 class="font-h3 text-4xl text-neo-black font-black uppercase italic">Eng</h3>
+</div>
+<div class="mb-8 p-6 brutal-border bg-neo-black text-white shadow-neo">
+<div class="text-xs text-primary-yellow uppercase font-black tracking-[0.2em] mb-4">Next Milestone</div>
+<div class="text-2xl font-h2 font-black tracking-tight leading-tight mb-4">
+                    Integration &amp; Partner Dashboard
+                </div>
+<p class="text-[11px] font-black uppercase flex items-center text-primary-yellow">
+<span class="material-symbols-outlined text-sm mr-2">schedule</span>
+                    Estimated Delivery May 2024
+                </p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="brutal-border p-4 bg-white shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1 text-primary-blue">NGN–USD</div>
+<div class="text-sm font-black uppercase border-b-2 border-primary-crimson inline-block">Live</div>
+</div>
+<div class="brutal-border p-4 bg-white shadow-neo-sm">
+<div class="text-[10px] uppercase font-black mb-1 text-primary-blue">Status</div>
+<div class="text-sm font-black uppercase border-b-2 border-primary-yellow inline-block">In Progress</div>
+</div>
+</div>
+</article>
+</section>
+</main>
+
+</body></html>
