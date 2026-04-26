@@ -4,7 +4,7 @@ import React from 'react';
 import { Activity, CheckCircle2, Clock } from 'lucide-react';
 
 interface Project {
-  name: string;
+  title: string;
   status: 'Live' | 'In Development' | 'Testing';
   dateLabel: string;
   dateValue: string;
@@ -35,9 +35,9 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({ projects, heal
       {/* Project statuses */}
       <div className="space-y-7 flex-1">
         {projects.map((project) => (
-          <div key={project.name} className="flex justify-between items-start">
+          <div key={project.title} className="flex justify-between items-start">
             <div>
-              <div className="text-[14px] font-semibold text-slate-400 mb-2">{project.name}</div>
+              <div className="text-[14px] font-semibold text-slate-400 mb-2">{project.title}</div>
               <div className={project.status === 'Live' ? 'badge-live' : 'badge-dev'}>
                 {project.status === 'Live'
                   ? <CheckCircle2 size={16} />
