@@ -12,12 +12,12 @@ import {
 import { DashboardData, EngineeringProject, Role, User } from '@/types/dashboard';
 
 const AUTHORIZED_USERS: User[] = [
-  { email: 'kene@tradevu.co', name: 'Kene', role: 'PM' },
-  { email: 'tola@tradevu.co', name: 'Tola', role: 'HR' },
-  { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO' },
-  { email: 'habeeb@tradevu.co', name: 'Habeeb', role: 'ENGINEERING_LEAD' },
-  { email: 'chibueze@tradevu.co', name: 'Chibueze', role: 'PAY_LEAD' },
-  { email: 'adaora@tradevu.co', name: 'Adaora', role: 'OPS_LEAD' },
+  { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
+  { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
+  { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
+  { email: 'habeeb@tradevu.co', name: 'Habeeb', role: 'ENGINEERING_LEAD', password: 'password123' },
+  { email: 'chibueze@tradevu.co', name: 'Chibueze', role: 'PAY_LEAD', password: 'password123' },
+  { email: 'adaora@tradevu.co', name: 'Adaora', role: 'OPS_LEAD', password: 'password123' },
 ];
 
 const INITIAL_PERMISSIONS: Record<Role, string[]> = {
@@ -48,7 +48,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User>(AUTHORIZED_USERS[2]); // Default to CEO for demo
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState<string | null>(null);
   
   // UI States
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -87,7 +90,30 @@ export default function AdminPage() {
   }, []);
 
   const canView = (section: string) => {
+    if (!currentUser) return false;
     return rolePermissions[currentUser.role]?.includes(section);
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const user = AUTHORIZED_USERS.find(u => 
+      u.email.toLowerCase() === loginForm.email.toLowerCase() && 
+      u.password === loginForm.password
+    );
+    
+    if (user) {
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      setLoginError(null);
+    } else {
+      setLoginError('Invalid credentials. Please use password123.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setLoginForm({ email: '', password: '' });
   };
 
   const handleSave = async (payload: any, sectionName: string) => {
@@ -129,6 +155,7 @@ export default function AdminPage() {
   };
 
   const canEditConversions = () => {
+    if (!currentUser) return false;
     return ['CEO', 'PM', 'HR'].includes(currentUser.role);
   };
 
@@ -155,6 +182,70 @@ export default function AdminPage() {
     </div>
   );
 
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FE] flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl shadow-indigo-200/50 p-12 border border-slate-100 animate-in fade-in zoom-in duration-500">
+          <div className="flex justify-center mb-10">
+            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shadow-indigo-600/20">T</div>
+          </div>
+          
+          <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tight">Admin Console</h1>
+          <p className="text-slate-500 text-center font-medium mb-10">Enter your credentials to access the scoreboard.</p>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+              <div className="relative">
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="email" 
+                  required
+                  placeholder="name@tradevu.co"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none font-bold text-slate-900 transition-all"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="password" 
+                  required
+                  placeholder="••••••••"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none font-bold text-slate-900 transition-all"
+                />
+              </div>
+            </div>
+            
+            {loginError && (
+              <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-bold text-center animate-shake">
+                {loginError}
+              </div>
+            )}
+            
+            <button 
+              type="submit"
+              className="w-full py-5 bg-indigo-600 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+            >
+              Sign In <ArrowRight size={18} />
+            </button>
+          </form>
+          
+          <div className="mt-10 pt-10 border-t border-slate-50 text-center">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tradevu Internal Governance System</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#F8F9FE] text-slate-900 font-sans">
       
@@ -168,24 +259,15 @@ export default function AdminPage() {
 
           {/* User Console Card */}
           <div className="bg-slate-50 rounded-2xl p-5 mb-8 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
                 <UserIcon size={20} />
               </div>
               <div>
-                <div className="text-sm font-black text-slate-900">{currentUser.name}</div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{ROLE_LABELS[currentUser.role]}</div>
+                <div className="text-sm font-black text-slate-900">{currentUser?.name}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{currentUser ? ROLE_LABELS[currentUser.role] : ''}</div>
               </div>
             </div>
-            <button 
-              onClick={() => {
-                const nextIdx = (AUTHORIZED_USERS.findIndex(u => u.email === currentUser.email) + 1) % AUTHORIZED_USERS.length;
-                setCurrentUser(AUTHORIZED_USERS[nextIdx]);
-              }}
-              className="w-full py-2 bg-indigo-600/10 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 hover:text-white transition-all"
-            >
-              Switch Persona
-            </button>
           </div>
 
           <nav className="space-y-1.5">
@@ -209,7 +291,7 @@ export default function AdminPage() {
 
         <div className="mt-auto p-8 border-t border-slate-100">
           <SidebarItem icon={<HelpCircle size={20} />} label="Support" onClick={() => {}} active={false} />
-          <SidebarItem icon={<LogOut size={20} />} label="Sign Out" onClick={() => {}} active={false} />
+          <SidebarItem icon={<LogOut size={20} />} label="Sign Out" onClick={handleLogout} active={false} />
         </div>
       </aside>
 
