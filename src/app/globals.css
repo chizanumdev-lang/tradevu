@@ -1,33 +1,81 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-yellow: #FACC15;
-  --color-primary-blue: #2563EB;
-  --color-primary-crimson: #DC2626;
-  --color-neo-black: #000000;
+  --color-primary: #7C3AED;
+  --color-primary-light: #EDE9FE;
+  --color-mint-dark: #10B981;
+  --color-mint-bg: #ECFDF5;
+  --color-mint-accent: #34D399;
 
-  --font-h1: var(--font-plus-jakarta), sans-serif;
-  --font-h2: var(--font-plus-jakarta), sans-serif;
-  --font-h3: var(--font-plus-jakarta), sans-serif;
-  --font-body: var(--font-lato), sans-serif;
-
-  --shadow-neo: 8px 8px 0px 0px rgba(0,0,0,1);
-  --shadow-neo-sm: 4px 4px 0px 0px rgba(0,0,0,1);
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-h1: "Inter", system-ui, sans-serif;
+  --font-h2: "Inter", system-ui, sans-serif;
+  --font-h3: "Inter", system-ui, sans-serif;
 }
 
 @layer base {
-  body {
-    @apply bg-white text-neo-black antialiased;
-    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-    background-size: 24px 24px;
+  html, body {
+    background-color: #F9FAFB;
+    color: #0f172a;
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-@layer utilities {
-  .brutal-text-shadow {
-    text-shadow: 3px 3px 0px rgba(0,0,0,1);
+@layer components {
+  .card {
+    background: #ffffff;
+    border: 1px solid #e8e8ed;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px -4px rgba(0, 0, 0, 0.06);
   }
-  .text-balance {
-    text-wrap: balance;
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  .progress-track {
+    background: #f1f5f9;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    background: #7C3AED;
+    border-radius: 9999px;
+    transition: width 0.8s ease-out;
+  }
+
+  .badge-live {
+    color: #10B981;
+    font-weight: 800;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge-dev {
+    color: #D97706;
+    font-weight: 800;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scoreboard-wrap {
+    border: 2px dashed #e2e8f0;
+    border-radius: 28px;
+    padding: 32px;
   }
 }
+
+/* Hide scrollbar globally */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

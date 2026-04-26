@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tradevu Admin Intelligence Console</title>
+<!-- Google Fonts: Plus Jakarta Sans & Lato -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "background": "#fcf8ff",
+                    "primary-fixed": "#f0dbff",
+                    "on-primary-fixed-variant": "#622599",
+                    "on-error-container": "#93000a",
+                    "primary-container": "#4b0082",
+                    "on-primary-container": "#ba7ef4",
+                    "surface-container-highest": "#e3e0f2",
+                    "on-secondary-container": "#fffbff",
+                    "tertiary-container": "#342e47",
+                    "surface-bright": "#fcf8ff",
+                    "outline-variant": "#cec3d3",
+                    "surface-variant": "#e3e0f2",
+                    "secondary-container": "#8a4cfc",
+                    "inverse-surface": "#2f2f3c",
+                    "on-primary-fixed": "#2c0050",
+                    "tertiary-fixed": "#e8deff",
+                    "secondary": "#712ae2",
+                    "on-tertiary-container": "#9e95b4",
+                    "tertiary": "#1f1931",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "on-surface": "#1a1a27",
+                    "on-background": "#1a1a27",
+                    "primary": "#2e0052",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-high": "#e9e6f8",
+                    "on-error": "#ffffff",
+                    "surface": "#fcf8ff",
+                    "surface-tint": "#7b41b3",
+                    "inverse-on-surface": "#f2efff",
+                    "on-surface-variant": "#4c4451",
+                    "surface-dim": "#dad8e9",
+                    "on-secondary-fixed": "#25005a",
+                    "surface-container-low": "#f5f2ff",
+                    "tertiary-fixed-dim": "#cbc2e2",
+                    "secondary-fixed": "#eaddff",
+                    "on-tertiary-fixed-variant": "#49435d",
+                    "surface-container": "#eeecfe",
+                    "outline": "#7d7483",
+                    "inverse-primary": "#ddb7ff",
+                    "primary-fixed-dim": "#ddb7ff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#1d1830"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "12px",
+                    "container-padding": "32px",
+                    "base": "8px",
+                    "lg": "48px",
+                    "gutter": "20px",
+                    "md": "24px"
+            },
+            "fontFamily": {
+                    "label": ["Lato"],
+                    "h1": ["Plus Jakarta Sans"],
+                    "body-lg": ["Lato"],
+                    "h2": ["Plus Jakarta Sans"],
+                    "body-sm": ["Lato"],
+                    "h3": ["Plus Jakarta Sans"],
+                    "body-md": ["Lato"]
+            },
+            "fontSize": {
+                    "label": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                    "h1": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "h2": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                    "body-sm": ["14px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                    "h3": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Custom Utilities for the specific style guidance */
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(120, 80, 200, 0.15);
+            box-shadow: 0 8px 32px rgba(75, 0, 130, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-panel:hover {
+            border: 2px solid #7C3AED;
+            transform: translateY(-2px);
+        }
+
+        .decorative-frame {
+            border: 3px dashed #4B0082;
+            margin: 24px;
+            height: calc(100vh - 48px); /* Account for margins */
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex h-screen overflow-hidden antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 border-r border-indigo-100/30 dark:border-indigo-900/30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl z-40 flex flex-col py-8 px-4 space-y-6 shadow-2xl shadow-indigo-500/5">
+<!-- Brand & Header -->
+<div class="px-4 mb-4">
+<div class="text-lg font-black text-indigo-800 dark:text-indigo-200 mb-6">Tradevu</div>
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg border border-outline-variant/30">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<div class="font-h3 text-[16px] text-on-surface leading-tight">Admin Console</div>
+<div class="font-label text-label text-on-surface-variant">CEO Persona</div>
+</div>
+</div>
+<button class="mt-4 w-full py-2 bg-tertiary-fixed text-secondary font-label text-label rounded-lg hover:bg-secondary-fixed transition-colors">
+                Switch Persona
+            </button>
+</div>
+<div class="border-t border-indigo-100/30 dark:border-indigo-900/30 mx-2"></div>
+<!-- Main Navigation -->
+<div class="flex-1 space-y-2">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-4 py-3 bg-indigo-100/50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 rounded-lg font-bold font-['Plus_Jakarta_Sans'] text-sm transition-all duration-200 translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<!-- Inactive Tabs -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Departments
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">gavel</span>
+                Governance
+            </a>
+</div>
+<div class="border-t border-indigo-100/30 dark:border-indigo-900/30 mx-2"></div>
+<!-- Footer Navigation -->
+<div class="space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+                Profile
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 flex flex-col relative bg-background">
+<!-- TopNavBar (Positioned Absolute/Fixed within relative main, but we'll use sticky for flow) -->
+<header class="docked full-width top-0 border-b border-indigo-100/30 dark:border-indigo-900/30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-[0_8px_32px_rgba(75,0,130,0.08)] flex justify-between items-center px-6 h-16 w-full z-30 sticky">
+<div class="flex items-center gap-4">
+<!-- Search could go here based on "search_bar: on_left" but typically it's an input -->
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-lowest/50 border border-outline-variant/30 rounded-full font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all w-64" placeholder="Search operations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-all duration-300 rounded-full flex items-center justify-center relative active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-all duration-300 rounded-full flex items-center justify-center active:opacity-80 active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-px bg-indigo-200/50 dark:bg-indigo-800/50 mx-2"></div>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-indigo-100 shadow-sm" data-alt="professional headshot of a man with short brown hair in a well-lit studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtO0LIl7P5dzd5j2sWslGKaWpeUMx3Mx2xsAD8ZXgw8dZe4uhBlhysqB_Jl7WMxkEyV9r7p_dyEpeGREHxY_a8c0HBZi6NecCMeNPo1suxuZH7kZ7mlJKxZmnGJnWP3fneXfFiYkBGSVXagnE4R5swC843hnxJqRpQjqjBA7pdFmriIl1qP68HDVT4FtO3K2eSwrnApauudJ-A3ZJz7qovwlh7OMy90LNziYnIe7wbiq6GOqhaido4KeJO7ItfKNRtWxiuGq-2Sw"/>
+</div>
+</header>
+<!-- The Decorative Frame Container -->
+<div class="decorative-frame bg-surface-bright/40 relative">
+<!-- Inner Scrollable Canvas -->
+<div class="flex-1 overflow-y-auto p-container-padding">
+<!-- Global Status Bar -->
+<div class="flex justify-center w-full mb-md">
+<div class="inline-flex items-center gap-2 bg-tertiary-fixed px-4 py-1.5 rounded-full border border-outline-variant/20 shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label text-label text-secondary tracking-widest uppercase">System active</span>
+</div>
+</div>
+<!-- Page Header -->
+<div class="mb-lg">
+<h1 class="font-h1 text-h1 text-primary-container mb-2">Command Center</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Real-time overview of Tradevu operational metrics and governance controls.</p>
+</div>
+<!-- Metrics Grid (Bento Style) -->
+<div class="grid grid-cols-12 gap-gutter mb-lg">
+<!-- KPI Card 1 -->
+<div class="col-span-12 md:col-span-4 glass-panel rounded-xl p-md flex flex-col justify-between h-40 relative overflow-hidden">
+<!-- Decorative background glow -->
+<div class="absolute -right-10 -top-10 w-32 h-32 bg-secondary-container/20 rounded-full blur-2xl"></div>
+<div class="flex justify-between items-start relative z-10">
+<div>
+<h3 class="font-h3 text-[18px] text-on-surface mb-1">Daily Active Users</h3>
+<div class="font-label text-label text-on-surface-variant">Past 24 Hours</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">group</span>
+</div>
+</div>
+<div class="relative z-10 flex items-end justify-between">
+<div class="font-h2 text-h2 text-primary-container">24,592</div>
+<div class="bg-tertiary-fixed text-secondary font-label text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+                                +12%
+                            </div>
+</div>
+</div>
+<!-- KPI Card 2 -->
+<div class="col-span-12 md:col-span-4 glass-panel rounded-xl p-md flex flex-col justify-between h-40 relative overflow-hidden">
+<div class="absolute -left-10 -bottom-10 w-32 h-32 bg-primary-fixed/30 rounded-full blur-2xl"></div>
+<div class="flex justify-between items-start relative z-10">
+<div>
+<h3 class="font-h3 text-[18px] text-on-surface mb-1">Weekly Transfers</h3>
+<div class="font-label text-label text-on-surface-variant">Volumetric Flow</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">swap_horiz</span>
+</div>
+</div>
+<div class="relative z-10 flex items-end justify-between">
+<div class="font-h2 text-h2 text-primary-container">1.2M</div>
+<div class="bg-tertiary-fixed text-secondary font-label text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+                                +5.4%
+                            </div>
+</div>
+</div>
+<!-- KPI Card 3 -->
+<div class="col-span-12 md:col-span-4 glass-panel rounded-xl p-md flex flex-col justify-between h-40 relative overflow-hidden">
+<div class="absolute right-0 top-1/2 w-24 h-24 bg-secondary/10 rounded-full blur-xl translate-x-1/2 -translate-y-1/2"></div>
+<div class="flex justify-between items-start relative z-10">
+<div>
+<h3 class="font-h3 text-[18px] text-on-surface mb-1">Active Projects</h3>
+<div class="font-label text-label text-on-surface-variant">In Deployment</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">folder</span>
+</div>
+</div>
+<div class="relative z-10 flex items-end justify-between">
+<div class="font-h2 text-h2 text-primary-container">348</div>
+<div class="bg-surface-container-high text-on-surface-variant font-label text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">horizontal_rule</span>
+                                Stable
+                            </div>
+</div>
+</div>
+</div>
+<!-- Quick Actions Section -->
+<div>
+<h2 class="font-h3 text-[20px] text-on-surface mb-sm">Quick Actions</h2>
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Action 1 -->
+<button class="col-span-12 md:col-span-6 glass-panel rounded-xl p-md flex items-center gap-6 text-left group">
+<div class="w-16 h-16 rounded-full bg-primary text-on-primary flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[32px]">update</span>
+</div>
+<div>
+<h3 class="font-h3 text-[20px] text-primary-container group-hover:text-secondary transition-colors">Update Weekly Metrics</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Force a manual sync of the data warehouse pipeline.</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline group-hover:text-secondary transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 duration-300">arrow_forward</span>
+</button>
+<!-- Action 2 -->
+<button class="col-span-12 md:col-span-6 glass-panel rounded-xl p-md flex items-center gap-6 text-left group">
+<div class="w-16 h-16 rounded-full bg-tertiary-fixed text-secondary flex items-center justify-center group-hover:scale-105 transition-transform duration-300 border border-secondary/20">
+<span class="material-symbols-outlined text-[32px]">policy</span>
+</div>
+<div>
+<h3 class="font-h3 text-[20px] text-primary-container group-hover:text-secondary transition-colors">Manage Governance</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Review pending access requests and compliance flags.</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline group-hover:text-secondary transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 duration-300">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

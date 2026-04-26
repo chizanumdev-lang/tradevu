@@ -1,28 +1,39 @@
-import React from 'react';
-import { Star } from 'lucide-react';
+'use client';
 
-interface LaunchStatusProps {
-  phase: string;
+import React from 'react';
+
+interface DeptTarget {
+  name: string;
   progress: number;
 }
 
-export const LaunchStatus: React.FC<LaunchStatusProps> = ({ phase, progress }) => {
+interface LaunchStatusProps {
+  phase: string;
+  overallProgress: number;
+  deptTargets: DeptTarget[];
+}
+
+export const LaunchStatus: React.FC<LaunchStatusProps> = ({ phase, overallProgress, deptTargets }) => {
   return (
-    <div className="mt-8 border-l-8 border-primary-yellow pl-6">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-xs font-black uppercase tracking-widest text-primary-blue">Launch Readiness</span>
-        <div className="text-primary-crimson">
-          <Star size={16} fill="currentColor" />
-        </div>
+    <div className="card h-full flex flex-col">
+      <div className="section-label mb-4">Launch Readiness</div>
+
+      <h3 className="text-[22px] font-black text-slate-900 mb-4">{phase} targets</h3>
+
+      <div className="progress-track h-2.5 mb-8">
+        <div className="progress-fill h-full" style={{ width: `${overallProgress}%` }} />
       </div>
-      <div className="font-h3 text-2xl font-black brutal-text-shadow text-white bg-neo-black px-2 py-1 inline-block uppercase">
-        {phase}
-      </div>
-      <div className="w-full border-4 border-neo-black h-6 bg-white mt-6 relative overflow-hidden">
-        <div 
-          className="bg-primary-crimson h-full border-r-4 border-neo-black transition-all duration-1000"
-          style={{ width: `${progress}%` }}
-        />
+
+      <div className="flex flex-col gap-5 mt-auto">
+        {deptTargets.map((dept) => (
+          <div key={dept.name} className="flex items-center gap-4">
+            <span className="text-[15px] font-semibold text-slate-700 w-28">{dept.name}</span>
+            <div className="flex-1 progress-track h-1.5">
+              <div className="progress-fill h-full" style={{ width: `${dept.progress}%` }} />
+            </div>
+            <span className="text-[13px] font-bold text-slate-400 w-8 text-right">{dept.progress}%</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 interface RevenueRingProps {
@@ -7,54 +9,53 @@ interface RevenueRingProps {
 }
 
 export const RevenueRing: React.FC<RevenueRingProps> = ({ goal, current, percentage }) => {
+  // Arc math: half-circle from left to right
+  const radius = 40;
+  const circumference = Math.PI * radius; // half circumference
+  const offset = circumference * (1 - percentage / 100);
+
   return (
-    <div className="flex flex-col items-center justify-center py-12 border-4 border-neo-black bg-white shadow-neo">
-      <span className="text-xs font-black text-neo-black uppercase tracking-[0.3em] mb-12 border-b-2 border-neo-black">
-        Annual Revenue Goal
-      </span>
-      <div className="relative w-40 h-20 mb-8">
-        <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50">
-          <defs>
-            <linearGradient id="brutalGradient" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor="#2563EB" />
-              <stop offset="100%" stopColor="#DC2626" />
-            </linearGradient>
-            <filter height="200%" id="brutalGlow" width="200%" x="-50%" y="-50%">
-              <feDropShadow dx="0" dy="0" floodColor="#DC2626" stdDeviation="2" />
-            </filter>
-          </defs>
-          <path 
-            d="M 10 50 A 40 40 0 0 1 90 50" 
-            fill="none" 
-            stroke="#000000" 
-            strokeDasharray="2,2" 
-            strokeWidth="2" 
-          />
-          <path 
-            d="M 10 50 A 40 40 0 0 1 90 50" 
-            fill="none" 
-            stroke="url(#brutalGradient)" 
-            strokeLinecap="square" 
-            strokeWidth="3"
-            strokeDasharray={125.6} // Semi-circle circumference (approx)
-            strokeDashoffset={125.6 * (1 - percentage / 100)}
-            className="transition-all duration-1000 ease-out"
-          />
-          <circle 
-            cx={50 + 40 * Math.cos(Math.PI - (percentage / 100) * Math.PI)} 
-            cy={50 - 40 * Math.sin((percentage / 100) * Math.PI)} 
-            fill="#000000" 
-            r="4" 
-            style={{ filter: 'url(#brutalGlow)' }} 
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-end pt-4">
-          <span className="text-4xl font-black brutal-text-shadow text-primary-yellow">
-            ${(current / 1000000).toFixed(1)}M
-          </span>
-          <span className="text-[10px] font-black bg-neo-black text-white px-2 mt-2 uppercase tracking-tighter">
-            {percentage}% Collected
-          </span>
+    <div className="card h-full flex flex-col">
+      <div className="section-label mb-6">FY Revenue Goal</div>
+
+      <div className="flex-1 flex flex-col items-center justify-center py-4">
+        <div className="relative" style={{ width: 200, height: 104 }}>
+          <svg width="200" height="104" viewBox="0 0 100 52" overflow="visible">
+            {/* Track */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth="9"
+              strokeLinecap="round"
+            />
+            {/* Fill */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="#7C3AED"
+              strokeWidth="9"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+            <span className="text-[28px] font-black text-slate-900 leading-none">{percentage}%</span>
+            <span className="text-[13px] font-semibold text-slate-400 mt-1">achieved</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between pt-4 border-t border-slate-100 mt-4">
+        <div>
+          <div className="text-[13px] font-bold text-slate-400 mb-1">Revenue target</div>
+          <div className="text-[18px] font-black text-slate-900">${(goal / 1000000).toFixed(0)}m</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[13px] font-bold text-slate-400 mb-1">Current YTD</div>
+          <div className="text-[18px] font-black text-slate-900">${(current / 1000).toFixed(0)}k</div>
         </div>
       </div>
     </div>

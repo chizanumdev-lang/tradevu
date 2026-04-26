@@ -1,54 +1,116 @@
+export type Role = 'CEO' | 'HR' | 'PM' | 'ENGINEERING_LEAD' | 'PAY_LEAD' | 'OPS_LEAD' | 'GUEST';
+
+export interface User {
+  email: string;
+  name: string;
+  role: Role;
+}
+
+// ─── Customer Metrics ─────────────────────────────────────────────────────────
 export interface CustomerMetrics {
+  /** Total customers this period */
   current: number;
-  previous: number;
+  /** Monthly goal (from DB) */
+  goal: number;
+  /** Monthly active customers */
+  activeMonthly: number;
+  /** % change vs previous period (positive = growth) */
   percentageChange: number;
 }
 
-export interface CustomerOverview {
-  totalCustomers: number;
-  verifiedUsers: number;
-  activeTrialUsers: number;
-}
-
+// ─── Revenue ──────────────────────────────────────────────────────────────────
 export interface RevenueMetrics {
   goal: number;
   current: number;
+  /** 0-100 */
   percentage: number;
 }
 
-export interface LaunchStatus {
-  phase: string;
+// ─── Launch / Quarter Readiness ───────────────────────────────────────────────
+export interface DeptTarget {
+  name: string;
+  /** 0-100 */
   progress: number;
 }
 
+export interface LaunchStatus {
+  /** e.g. "Q2" */
+  phase: string;
+  /** Overall (average) progress 0-100 */
+  progress: number;
+  deptTargets: DeptTarget[];
+}
+
+// ─── Ops Weekly ───────────────────────────────────────────────────────────────
 export interface WeeklyOps {
   weeklyGoal: number;
-  unitsCompleted: number;
+  /** Total visits this week */
   visits: number;
+  /** Conversations (engaged subset of visits) */
+  conversations: number;
+  /** Users who actually used the product */
+  usersConverted: number;
+  /**
+   * Conversion rate: conversations that led to actual product use.
+   * Stored as a percentage (0-100).
+   */
   conversionRate: number;
+  activePilots: number;
+}
+
+// ─── Pay Weekly ───────────────────────────────────────────────────────────────
+export interface TransferMetric {
+  label: string;
+  current: number;
+  value?: number; // Alias for current used in some UI parts
+  goal: number;
 }
 
 export interface WeeklyPay {
   weeklyGoal: number;
-  conversions: number;
+  /** Total conversations this week */
   conversations: number;
+  /** Users who actually used the product */
+  usersConverted: number;
+  /**
+   * Conversion rate: conversations that led to actual product use.
+   * Stored as a percentage (0-100).
+   */
   conversionRate: number;
+  transfers: TransferMetric[];
 }
 
-export interface EngineeringMilestone {
+// ─── Engineering ──────────────────────────────────────────────────────────────
+export interface EngineeringProject {
+  id: string;
   title: string;
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
-  environment: 'LIVE' | 'STAGING' | 'DEV';
-  currencyPair: string;
-  estimatedDelivery: string;
+  description: string;
+  name?: string; // Legacy
+  status: 'Live' | 'In Development' | 'Testing';
+  dateLabel: string;
+  dateValue: string;
+  progress?: number;
+  eta?: string;
 }
 
+export interface EngineeringHealthMetric {
+  label: string;
+  value: string;
+  isGood: boolean;
+}
+
+export interface EngineeringData {
+  projects: EngineeringProject[];
+  health: EngineeringHealthMetric[];
+}
+
+// ─── Aggregated dashboard payload ─────────────────────────────────────────────
 export interface DashboardData {
   customersMonthly: CustomerMetrics;
-  customersOverview: CustomerOverview;
   revenueAnnual: RevenueMetrics;
   launchStatus: LaunchStatus;
   opsWeekly: WeeklyOps;
   payWeekly: WeeklyPay;
-  engineeringMilestone: EngineeringMilestone;
+  engineering: EngineeringData;
+  engineeringRoadmap: EngineeringProject[];
 }

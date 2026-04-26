@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
+import { RevenueRing } from '@/components/dashboard/RevenueRing';
+import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 import { DashboardData } from '@/types/dashboard';
@@ -12,103 +12,136 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
   useEffect(() => {
     fetch('/api/dashboard')
       .then(res => res.json())
-      .then(d => {
-        setData(d);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to fetch dashboard data', err);
-        setLoading(false);
-      });
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
-  if (loading || !data) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#f0f0f0] flex items-center justify-center">
-        <div className="text-4xl font-black animate-pulse uppercase italic">Loading Dashboard...</div>
+      <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center">
+        <div className="text-2xl font-black animate-pulse text-primary">Loading Scoreboard...</div>
+      </div>
+    );
+  }
+
+  if (!data || ('error' in data)) {
+    return (
+      <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-10 text-center">
+        <div className="text-xl font-bold text-red-500 mb-4">Database Setup Required</div>
+        <p className="text-slate-600 mb-6 font-mono text-sm max-w-lg">
+          {(data as any)?.error || 'Unable to connect to the database.'}
+        </p>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left mb-6 max-w-2xl">
+          <h3 className="font-bold mb-2">How to fix this:</h3>
+          <p className="text-sm text-slate-600 mb-4">The Supabase tables haven't been created yet. You need to run the schema script.</p>
+          <code className="block bg-slate-900 text-slate-100 p-4 rounded text-xs overflow-x-auto whitespace-pre">
+            {`# Option 1: Run the Node script (requires Service Role key)
+export SUPABASE_SERVICE_KEY="your_service_role_key"
+node scripts/create-tables.mjs
+
+# Option 2: Run SQL manually
+1. Go to Supabase Dashboard -> SQL Editor
+2. Copy the contents of supabase/schema.sql
+3. Run the script`}
+          </code>
+        </div>
+        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg shadow hover:opacity-90">
+          Refresh Dashboard
+        </button>
       </div>
     );
   }
 
   return (
-    <main className="container mx-auto px-6 py-12 max-w-screen-2xl relative z-10 font-body antialiased min-h-screen">
-      {/* Grid Background Effect moved to body via globals.css */}
+    <main className="max-w-[1440px] mx-auto px-10 py-10">
+      {/* ── Header ────────────────────────────────── */}
+      <header className="mb-8">
+        <p className="text-[13px] font-semibold text-slate-400 mb-1">✳ Good morning, Team!</p>
+        <div className="flex justify-between items-end">
+          <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
+            FY&apos;26 Operating Scoreboard
+          </h1>
+          <p className="text-[13px] font-semibold text-slate-400">
+            Last updated: {currentDate}
+          </p>
+        </div>
+      </header>
 
-      {/* Top Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16 items-start">
-        {/* Monthly Customers + Launch Readiness */}
-        <div className="flex flex-col gap-4">
-          <StatCard 
-            title="Monthly Customers"
-            value={data.customersMonthly.current}
-            tag="group"
-            trend={{
-              value: data.customersMonthly.percentageChange,
-              label: "last mo",
-              isUp: true
+      {/* ── Scoreboard border ─────────────────────── */}
+      <div className="scoreboard-wrap">
+        <div className="grid grid-cols-3 gap-6">
+
+          {/* ── Row 1 ── */}
+          <LaunchStatus
+            phase={data.launchStatus.phase}
+            overallProgress={data.launchStatus.progress}
+            deptTargets={data.launchStatus.deptTargets}
+          />
+
+          <RevenueRing
+            goal={data.revenueAnnual.goal}
+            current={data.revenueAnnual.current}
+            percentage={data.revenueAnnual.percentage}
+          />
+
+          <CustomerCard
+            total={data.customersMonthly.current}
+            goal={data.customersMonthly.goal}
+            activeMonthly={data.customersMonthly.activeMonthly}
+            trend={data.customersMonthly.percentageChange}
+          />
+
+          {/* ── Row 2 ── */}
+          <OpsCard
+            type="OPS"
+            mainMetric={{
+              label: 'Visits',
+              current: data.opsWeekly.visits,
+              goal: data.opsWeekly.weeklyGoal,
+            }}
+            subMetric={{
+              label: 'Conversations',
+              value: data.opsWeekly.conversations,
+              trend: 0, // week-over-week trend calculated server-side if needed
+            }}
+            conversion={{
+              label: 'Conversation → Conversion Rate',
+              value: data.opsWeekly.conversionRate,
             }}
           />
-          <LaunchStatus 
-            phase={data.launchStatus.phase}
-            progress={data.launchStatus.progress}
+
+          <OpsCard
+            type="PAY"
+            mainMetric={{
+              label: 'Conversations',
+              current: data.payWeekly.conversations,
+              goal: data.payWeekly.weeklyGoal,
+            }}
+            conversion={{
+              label: 'Conversation → Conversion Rate',
+              value: data.payWeekly.conversionRate,
+            }}
+            listMetrics={data.payWeekly.transfers}
           />
-        </div>
 
-        {/* Annual Revenue Goal */}
-        <RevenueRing 
-          goal={data.revenueAnnual.goal}
-          current={data.revenueAnnual.current}
-          percentage={data.revenueAnnual.percentage}
-        />
-
-        {/* Total Customers + Active Trial */}
-        <div className="flex flex-col gap-6">
-          <StatCard 
-            title="Total Customers"
-            value={data.customersOverview.totalCustomers}
-            subtext="Verified Platform Users"
-            tag="public"
+          <EngineeringCard
+            projects={data.engineering.projects}
+            health={data.engineering.health}
           />
-          <div className="mt-12 pt-8 border-t-4 border-neo-black border-dashed">
-            <div className="text-xs font-black uppercase tracking-widest mb-2 text-primary-crimson">Active Trial Users</div>
-            <div className="text-5xl text-primary-blue font-h2 font-black brutal-text-shadow tracking-tighter">
-              {data.customersOverview.activeTrialUsers.toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Bottom Section: Operations & Eng */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-        <OpsCard 
-          type="OPS"
-          weeklyGoal={data.opsWeekly.weeklyGoal}
-          units={data.opsWeekly.unitsCompleted}
-          secondaryLabel="Visits"
-          secondaryValue={data.opsWeekly.visits}
-          conversionRate={data.opsWeekly.conversionRate}
-        />
-        <OpsCard 
-          type="PAY"
-          weeklyGoal={data.payWeekly.weeklyGoal}
-          units={data.payWeekly.conversions}
-          secondaryLabel="Conversations"
-          secondaryValue={data.payWeekly.conversations}
-          conversionRate={data.payWeekly.conversionRate}
-        />
-        <EngineeringCard 
-          milestone={{
-            title: data.engineeringMilestone.title,
-            status: data.engineeringMilestone.status,
-            environment: data.engineeringMilestone.environment,
-            currencyPair: data.engineeringMilestone.currencyPair,
-            estimatedDelivery: data.engineeringMilestone.estimatedDelivery
-          }}
-        />
-      </section>
+        </div>
+      </div>
     </main>
   );
 }

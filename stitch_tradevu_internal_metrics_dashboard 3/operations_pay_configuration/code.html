@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tradevu Admin Intelligence Console - Operations &amp; Pay Module</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "background": "#fcf8ff",
+                        "primary-fixed": "#f0dbff",
+                        "on-primary-fixed-variant": "#622599",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#4b0082",
+                        "on-primary-container": "#ba7ef4",
+                        "surface-container-highest": "#e3e0f2",
+                        "on-secondary-container": "#fffbff",
+                        "tertiary-container": "#342e47",
+                        "surface-bright": "#fcf8ff",
+                        "outline-variant": "#cec3d3",
+                        "surface-variant": "#e3e0f2",
+                        "secondary-container": "#8a4cfc",
+                        "inverse-surface": "#2f2f3c",
+                        "on-primary-fixed": "#2c0050",
+                        "tertiary-fixed": "#e8deff",
+                        "secondary": "#712ae2",
+                        "on-tertiary-container": "#9e95b4",
+                        "tertiary": "#1f1931",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-surface": "#1a1a27",
+                        "on-background": "#1a1a27",
+                        "primary": "#2e0052",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e9e6f8",
+                        "on-error": "#ffffff",
+                        "surface": "#fcf8ff",
+                        "surface-tint": "#7b41b3",
+                        "inverse-on-surface": "#f2efff",
+                        "on-surface-variant": "#4c4451",
+                        "surface-dim": "#dad8e9",
+                        "on-secondary-fixed": "#25005a",
+                        "surface-container-low": "#f5f2ff",
+                        "tertiary-fixed-dim": "#cbc2e2",
+                        "secondary-fixed": "#eaddff",
+                        "on-tertiary-fixed-variant": "#49435d",
+                        "surface-container": "#eeecfe",
+                        "outline": "#7d7483",
+                        "inverse-primary": "#ddb7ff",
+                        "primary-fixed-dim": "#ddb7ff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#1d1830"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "12px",
+                        "container-padding": "32px",
+                        "base": "8px",
+                        "lg": "48px",
+                        "gutter": "20px",
+                        "md": "24px"
+                    },
+                    "fontFamily": {
+                        "label": ["Lato"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "body-lg": ["Lato"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body-sm": ["Lato"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "body-md": ["Lato"]
+                    },
+                    "fontSize": {
+                        "label": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "h1": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "h2": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "h3": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(120, 80, 200, 0.15);
+            box-shadow: 0 8px 32px rgba(75, 0, 130, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-card:hover {
+            border: 2px solid #7C3AED;
+        }
+        .dash-frame {
+            border: 3px dashed #4B0082;
+            margin: 24px;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col md:flex-row overflow-hidden font-body-md">
+<!-- SideNavBar (WEB) -->
+<nav class="hidden md:flex flex-col h-full py-8 px-4 space-y-6 fixed left-0 top-0 w-64 border-r border-indigo-100/30 dark:border-indigo-900/30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl z-40 shadow-2xl shadow-indigo-500/5">
+<div class="flex items-center gap-3 px-2 mb-4">
+<span class="text-lg font-black text-indigo-800 dark:text-indigo-200">Admin Console</span>
+<span class="text-xs text-slate-500 block">CEO Persona</span>
+</div>
+<div class="3px dashed border-[#4B0082] m-6"></div>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-indigo-100/50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 rounded-lg font-bold hover:border-2 hover:border-[#7C3AED] transition-all duration-200 Active: translate-x-1 duration-150 font-['Plus_Jakarta_Sans'] text-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">groups</span>
+                    Departments
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-2 hover:border-[#7C3AED] transition-all duration-200 font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">gavel</span>
+                    Governance
+                </a>
+</li>
+</ul>
+<div class="space-y-2">
+<button class="w-full py-2 bg-[#E8DEFF] text-[#7C3AED] rounded-full font-label text-label hover:bg-indigo-100 transition-colors">Switch Persona</button>
+<div class="border-t border-indigo-100/30 dark:border-indigo-900/30 pt-4">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+                    Profile
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-lg font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span>
+                    Support
+                </a>
+</div>
+</div>
+</nav>
+<!-- TopNavBar (MOBILE/WEB Hybrid - adapting structure based on rules) -->
+<header class="flex justify-between items-center px-6 h-16 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl docked full-width top-0 border-b border-indigo-100/30 dark:border-indigo-900/30 shadow-[0_8px_32px_rgba(75,0,130,0.08)] md:ml-64 md:w-[calc(100%-16rem)] fixed">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-indigo-900 dark:text-indigo-100 font-['Plus_Jakarta_Sans'] tracking-tight">Tradevu</span>
+<div class="hidden md:flex items-center bg-surface-container rounded-full px-3 py-1.5 border border-indigo-200/15 dark:border-indigo-800/15">
+<span class="material-symbols-outlined text-outline text-sm mr-2">search</span>
+<input class="bg-transparent border-none text-sm focus:ring-0 text-on-surface w-48 font-body-sm" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-all duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-all duration-300 p-2 rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-indigo-200/50" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANPU5IlBZpRX_TXwuJFB9xA2QTrtbFU2OrvS0VFzyQqY8D_grM3nCs6y1hc_OF2FcUHoCKwwJ2c9bYPtv0H4semLgGXgYaHZz2Ss5W-Z5nxpso973__dXNyytYU0gFGelNLGlzaHlcrtDjlA16U5J5znFe5cSFZx58UJtbube5gB_oroZJR_agW7bMYhUgEYRT616LItb_gG4al8-ZjxdFO49mPrUCDOn7wKnJ1PVoDL0dpJpqc1aleWQyn0U3rcSQCCyWAukIZg"/>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 mt-16 p-6 h-[calc(100vh-4rem)] overflow-y-auto">
+<div class="dash-frame p-md rounded-xl h-full flex flex-col">
+<header class="mb-8 flex justify-between items-end">
+<div>
+<h1 class="font-h1 text-h1 text-primary mb-2 font-black">Operations &amp; Pay Module</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Field-level configuration for weekly granular data.</p>
+</div>
+<button class="bg-[#7C3AED] text-white px-6 py-3 rounded-full font-label text-label flex items-center gap-2 hover:bg-[#622599] transition-colors shadow-md">
+<span class="material-symbols-outlined spinner text-sm">progress_activity</span>
+                    SAVE CONFIGURATION
+                </button>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter flex-1">
+<!-- Left Column: Input Groups -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Operations Metrics Box -->
+<div class="glass-card rounded-xl p-md flex-1">
+<h2 class="font-h3 text-h3 text-primary mb-6 font-black border-b border-indigo-100 pb-2">WEEKLY OPERATIONS METRICS</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-on-surface uppercase tracking-widest block">Customer Support Tickets</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-outline">
+<span class="material-symbols-outlined text-sm">confirmation_number</span>
+</span>
+<input class="w-full bg-white/50 border border-indigo-100 rounded-lg py-2 pl-10 pr-4 text-on-surface focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition-all font-body-md" type="number" value="142"/>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-on-surface uppercase tracking-widest block">Active Pilots</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-outline">
+<span class="material-symbols-outlined text-sm">flight_takeoff</span>
+</span>
+<input class="w-full bg-white/50 border border-indigo-100 rounded-lg py-2 pl-10 pr-4 text-on-surface focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition-all font-body-md" type="number" value="8"/>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-on-surface uppercase tracking-widest block">Total Volume (Units)</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-outline">
+<span class="material-symbols-outlined text-sm">inventory_2</span>
+</span>
+<input class="w-full bg-white/50 border border-indigo-100 rounded-lg py-2 pl-10 pr-4 text-on-surface focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition-all font-body-md" type="number" value="45000"/>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-on-surface uppercase tracking-widest block">Success Rates (%)</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-outline">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+</span>
+<input class="w-full bg-white/50 border border-indigo-100 rounded-lg py-2 pl-10 pr-4 text-on-surface focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition-all font-body-md" step="0.1" type="number" value="98.5"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Revenue Accents (Emerald) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<div class="glass-card rounded-xl p-md bg-gradient-to-br from-emerald-50/40 to-transparent border-emerald-100/30 flex-1">
+<div class="flex items-center gap-2 mb-6 border-b border-emerald-100/50 pb-2">
+<span class="material-symbols-outlined text-emerald-600">payments</span>
+<h2 class="font-h3 text-h3 text-emerald-900 font-black">REVENUE DATA</h2>
+</div>
+<div class="space-y-6">
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-emerald-800 uppercase tracking-widest block">Gross Revenue (USD)</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600/70">
+<span class="material-symbols-outlined text-sm">attach_money</span>
+</span>
+<input class="w-full bg-white/60 border border-emerald-200/50 rounded-lg py-2 pl-10 pr-4 text-emerald-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-body-md" type="text" value="1,250,000"/>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-2">
+<label class="font-label text-label text-emerald-800 uppercase tracking-widest block">Net Margin (%)</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600/70">
+<span class="material-symbols-outlined text-sm">percent</span>
+</span>
+<input class="w-full bg-white/60 border border-emerald-200/50 rounded-lg py-2 pl-10 pr-4 text-emerald-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-body-md" step="0.1" type="number" value="24.2"/>
+</div>
+</div>
+<div class="mt-8 p-4 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-emerald-600 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-emerald-800">Revenue figures are automatically synced from the central ledger. Manual overrides require executive approval.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

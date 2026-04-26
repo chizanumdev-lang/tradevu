@@ -1,47 +1,90 @@
+'use client';
+
 import React from 'react';
-import { Settings, CreditCard } from 'lucide-react';
+import { Users, MessageSquare, TrendingUp, ChevronDown } from 'lucide-react';
 
 interface OpsCardProps {
   type: 'OPS' | 'PAY';
-  weeklyGoal: number;
-  units: number;
-  secondaryLabel: string;
-  secondaryValue: number;
-  conversionRate: number;
+  mainMetric: { label: string; current: number; goal: number };
+  subMetric?: { label: string; value: number; trend: number };
+  conversion: { label: string; value: number };
+  listMetrics?: { label: string; current: number; goal: number }[];
 }
 
-export const OpsCard: React.FC<OpsCardProps> = ({ type, weeklyGoal, units, secondaryLabel, secondaryValue, conversionRate }) => {
+export const OpsCard: React.FC<OpsCardProps> = ({
+  type,
+  mainMetric,
+  subMetric,
+  conversion,
+  listMetrics,
+}) => {
   const isOps = type === 'OPS';
-  
+  const Icon = isOps ? Users : MessageSquare;
+  const title = isOps ? 'Operations' : 'Tradevu Pay';
+  const progress = Math.min(Math.round((mainMetric.current / mainMetric.goal) * 100), 100);
+
   return (
-    <article className={`flex flex-col border-4 border-neo-black p-8 shadow-neo-sm relative ${isOps ? 'bg-white' : 'bg-white'}`}>
-      <div className={`absolute -top-5 -right-5 border-4 border-neo-black p-3 ${isOps ? 'bg-primary-yellow' : 'bg-primary-blue text-white'} shadow-neo-sm`}>
-        {isOps ? <Settings size={28} strokeWidth={3} /> : <CreditCard size={28} strokeWidth={3} />}
-      </div>
-      
-      <div className="flex items-center gap-4 mb-10">
-        <h3 className="font-h3 text-5xl text-neo-black font-black uppercase italic tracking-tighter">{isOps ? 'Ops' : 'Pay'}</h3>
+    <div className="card h-full flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <Icon size={18} />
+          </div>
+          <span className="text-[17px] font-extrabold text-slate-800">{title}</span>
+        </div>
+        <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+          This week <ChevronDown size={13} />
+        </button>
       </div>
 
-      <div className="mb-10 font-body">
-        <div className="text-xs text-primary-crimson uppercase font-black tracking-[0.2em] mb-3">Weekly Goal</div>
-        <div className="text-9xl font-h2 font-black text-neo-black brutal-text-shadow leading-none">{weeklyGoal}</div>
-        <p className="text-[11px] font-black uppercase mt-6 text-primary-blue flex items-center gap-2">
-          <span className="w-8 h-1 bg-primary-blue inline-block"></span>
-          {isOps ? 'Units / Week' : 'Convs / Week'}
-        </p>
+      {/* Main metric */}
+      <div className="mb-6">
+        <div className="text-[13px] font-bold text-slate-400 mb-2">{mainMetric.label}</div>
+        <div className="flex items-baseline gap-2 mb-4">
+          <span className="text-[32px] font-black text-slate-900 leading-none">{mainMetric.current}</span>
+          <span className="text-[20px] font-bold text-slate-300">/ {mainMetric.goal}</span>
+        </div>
+        <div className="progress-track h-2.5">
+          <div className="progress-fill h-full" style={{ width: `${progress}%` }} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mt-auto">
-        <div className={`border-4 border-neo-black p-4 shadow-neo-sm ${isOps ? 'bg-primary-yellow' : 'bg-[#f0f0f0]'}`}>
-          <div className="text-[10px] uppercase font-black mb-1">{secondaryLabel}</div>
-          <div className="text-3xl font-h2 font-black">{secondaryValue}</div>
+      <div className="mt-auto space-y-5 pt-2">
+        {/* Sub metric (Conversations for OPS) */}
+        {subMetric && (
+          <div className="pt-4 border-t border-slate-100">
+            <div className="text-[13px] font-bold text-slate-400 mb-2">{subMetric.label}</div>
+            <div className="flex items-end justify-between">
+              <span className="text-[28px] font-black text-slate-900 leading-none">{subMetric.value}</span>
+              <div className="flex items-center gap-1 text-[13px] font-bold text-mint-dark mb-1">
+                <TrendingUp size={14} />
+                +{subMetric.trend}% vs last week
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conversion rate */}
+        <div className={subMetric ? '' : 'pt-4 border-t border-slate-100'}>
+          <div className="text-[13px] font-bold text-slate-400 mb-1">{conversion.label}</div>
+          <div className="text-[26px] font-black text-primary">{conversion.value}%</div>
         </div>
-        <div className={`border-4 border-neo-black p-4 shadow-neo-sm ${isOps ? 'bg-[#f0f0f0]' : 'bg-primary-yellow'}`}>
-          <div className="text-[10px] uppercase font-black mb-1">Conversion</div>
-          <div className="text-3xl font-h2 font-black">{conversionRate}%</div>
-        </div>
+
+        {/* List metrics (LCY/FCY for PAY) */}
+        {listMetrics && listMetrics.length > 0 && (
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            {listMetrics.map((item) => (
+              <div key={item.label} className="flex justify-between items-center">
+                <span className="text-[15px] font-semibold text-slate-500">{item.label}</span>
+                <span className="text-[15px] font-black text-slate-800">
+                  {item.current} <span className="font-semibold text-slate-400">/ {item.goal}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </article>
+    </div>
   );
 };
