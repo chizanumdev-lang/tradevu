@@ -1,21 +1,39 @@
 'use client';
 
 import React from 'react';
+import { Edit2 } from 'lucide-react';
 
 interface RevenueRingProps {
   goal: number;
   current: number;
   percentage: number;
+  editMode?: boolean;
+  onEdit?: () => void;
 }
 
-export const RevenueRing: React.FC<RevenueRingProps> = ({ goal, current, percentage }) => {
+export const RevenueRing: React.FC<RevenueRingProps> = ({ 
+  goal, 
+  current, 
+  percentage,
+  editMode,
+  onEdit
+}) => {
   // Arc math: half-circle from left to right
   const radius = 40;
   const circumference = Math.PI * radius; // half circumference
   const offset = circumference * (1 - percentage / 100);
 
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full flex flex-col relative group">
+      {editMode && onEdit && (
+        <button 
+          onClick={onEdit}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+        >
+          <Edit2 size={14} />
+        </button>
+      )}
+      
       <div className="section-label mb-6">FY Revenue Goal</div>
 
       <div className="flex-1 flex flex-col items-center justify-center py-4">

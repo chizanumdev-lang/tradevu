@@ -111,12 +111,12 @@ node scripts/create-tables.mjs
               goal: data.opsWeekly.weeklyGoal,
             }}
             subMetric={{
-              label: 'Conversations',
+              label: 'Conversions',
               value: data.opsWeekly.conversations,
               trend: 0, // week-over-week trend calculated server-side if needed
             }}
             conversion={{
-              label: 'Conversation → Conversion Rate',
+              label: 'Visits → Conversion Rate',
               value: data.opsWeekly.conversionRate,
             }}
           />

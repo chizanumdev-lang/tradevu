@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Activity, CheckCircle2, Clock } from 'lucide-react';
+import { Activity, CheckCircle2, Clock, Edit2 } from 'lucide-react';
 
 interface Project {
   title: string;
@@ -19,11 +19,27 @@ interface HealthMetric {
 interface EngineeringCardProps {
   projects: Project[];
   health: HealthMetric[];
+  editMode?: boolean;
+  onEdit?: () => void;
 }
 
-export const EngineeringCard: React.FC<EngineeringCardProps> = ({ projects, health }) => {
+export const EngineeringCard: React.FC<EngineeringCardProps> = ({ 
+  projects, 
+  health,
+  editMode,
+  onEdit
+}) => {
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full flex flex-col relative group">
+      {editMode && onEdit && (
+        <button 
+          onClick={onEdit}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+        >
+          <Edit2 size={14} />
+        </button>
+      )}
+      
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">

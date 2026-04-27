@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, MessageSquare, TrendingUp, ChevronDown } from 'lucide-react';
+import { Users, MessageSquare, TrendingUp, ChevronDown, Edit2 } from 'lucide-react';
 
 interface OpsCardProps {
   type: 'OPS' | 'PAY';
@@ -9,6 +9,8 @@ interface OpsCardProps {
   subMetric?: { label: string; value: number; trend: number };
   conversion: { label: string; value: number };
   listMetrics?: { label: string; current: number; goal: number }[];
+  editMode?: boolean;
+  onEdit?: () => void;
 }
 
 export const OpsCard: React.FC<OpsCardProps> = ({
@@ -17,6 +19,8 @@ export const OpsCard: React.FC<OpsCardProps> = ({
   subMetric,
   conversion,
   listMetrics,
+  editMode,
+  onEdit,
 }) => {
   const isOps = type === 'OPS';
   const Icon = isOps ? Users : MessageSquare;
@@ -24,7 +28,16 @@ export const OpsCard: React.FC<OpsCardProps> = ({
   const progress = Math.min(Math.round((mainMetric.current / mainMetric.goal) * 100), 100);
 
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full flex flex-col relative group">
+      {editMode && onEdit && (
+        <button 
+          onClick={onEdit}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+        >
+          <Edit2 size={14} />
+        </button>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
@@ -33,9 +46,6 @@ export const OpsCard: React.FC<OpsCardProps> = ({
           </div>
           <span className="text-[17px] font-extrabold text-slate-800">{title}</span>
         </div>
-        <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
-          This week <ChevronDown size={13} />
-        </button>
       </div>
 
       {/* Main metric */}

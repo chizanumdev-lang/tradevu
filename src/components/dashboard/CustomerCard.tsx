@@ -1,20 +1,38 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Edit2 } from 'lucide-react';
 
 interface CustomerCardProps {
   total: number;
   goal: number;
   activeMonthly: number;
   trend: number;
+  editMode?: boolean;
+  onEdit?: () => void;
 }
 
-export const CustomerCard: React.FC<CustomerCardProps> = ({ total, goal, activeMonthly, trend }) => {
+export const CustomerCard: React.FC<CustomerCardProps> = ({ 
+  total, 
+  goal, 
+  activeMonthly, 
+  trend,
+  editMode,
+  onEdit
+}) => {
   const progress = Math.min(Math.round((total / goal) * 100), 100);
 
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full flex flex-col relative group">
+      {editMode && onEdit && (
+        <button 
+          onClick={onEdit}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+        >
+          <Edit2 size={14} />
+        </button>
+      )}
+      
       <div className="section-label mb-6">Customers</div>
 
       <div className="mb-8">

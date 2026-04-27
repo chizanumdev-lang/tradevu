@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Edit2 } from 'lucide-react';
 
 interface DeptTarget {
   name: string;
@@ -11,11 +12,28 @@ interface LaunchStatusProps {
   phase: string;
   overallProgress: number;
   deptTargets: DeptTarget[];
+  editMode?: boolean;
+  onEdit?: () => void;
 }
 
-export const LaunchStatus: React.FC<LaunchStatusProps> = ({ phase, overallProgress, deptTargets }) => {
+export const LaunchStatus: React.FC<LaunchStatusProps> = ({ 
+  phase, 
+  overallProgress, 
+  deptTargets,
+  editMode,
+  onEdit
+}) => {
   return (
-    <div className="card h-full flex flex-col">
+    <div className="card h-full flex flex-col relative group">
+      {editMode && onEdit && (
+        <button 
+          onClick={onEdit}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+        >
+          <Edit2 size={14} />
+        </button>
+      )}
+      
       <div className="section-label mb-4">Launch Readiness</div>
 
       <h3 className="text-[22px] font-black text-slate-900 mb-4">{phase} targets</h3>
