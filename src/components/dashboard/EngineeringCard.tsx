@@ -29,6 +29,42 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
   editMode,
   onEdit
 }) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || projects.length <= 2) return; // Only scroll if there are many projects
+
+    let animationId: number;
+    let lastTime = 0;
+    const speed = 15; // pixels per second
+
+    const animate = (time: number) => {
+      if (!lastTime) lastTime = time;
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+
+      // When we reach the bottom, stay there for a moment then reset
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+        // Simple loop back to top
+        el.scrollTop = 0;
+      } else {
+        el.scrollTop += speed * delta;
+      }
+      animationId = requestAnimationFrame(animate);
+    };
+
+    // Delay start slightly
+    const startTimeout = setTimeout(() => {
+      animationId = requestAnimationFrame(animate);
+    }, 2000);
+
+    return () => {
+      clearTimeout(startTimeout);
+      cancelAnimationFrame(animationId);
+    };
+  }, [projects]);
+
   return (
     <div className="card h-full flex flex-col relative group">
       {editMode && onEdit && (
@@ -49,7 +85,10 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       </div>
 
       {/* Project statuses */}
-      <div className="space-y-7 flex-1 max-h-[180px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div 
+        ref={scrollRef}
+        className="space-y-7 flex-1 max-h-[180px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full no-scrollbar"
+      >
         {projects.map((project) => (
           <div key={project.title} className="flex justify-between items-start">
             <div>
