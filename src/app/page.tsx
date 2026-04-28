@@ -55,6 +55,67 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [timeOffset]);
 
+  // Global auto-scroll to reveal everything slowly
+  useEffect(() => {
+    if (loading || !data) return;
+
+    let animationId: number;
+    let lastTime = 0;
+    const speed = 15; // pixels per second
+    let direction = 1; // 1 for down, -1 for up
+    let isPausing = false;
+
+    const animate = (time: number) => {
+      if (!lastTime) {
+        lastTime = time;
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+      
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+
+      if (isPausing) {
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+
+      const currentScroll = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+      if (maxScroll <= 10) {
+        // Not enough content to scroll
+        return;
+      }
+
+      if (direction === 1 && currentScroll >= maxScroll) {
+        isPausing = true;
+        setTimeout(() => {
+          direction = -1;
+          isPausing = false;
+        }, 4000);
+      } else if (direction === -1 && currentScroll <= 0) {
+        isPausing = true;
+        setTimeout(() => {
+          direction = 1;
+          isPausing = false;
+        }, 4000);
+      }
+
+      window.scrollBy(0, speed * delta * direction);
+      animationId = requestAnimationFrame(animate);
+    };
+
+    const startTimeout = setTimeout(() => {
+      animationId = requestAnimationFrame(animate);
+    }, 3000);
+
+    return () => {
+      clearTimeout(startTimeout);
+      cancelAnimationFrame(animationId);
+    };
+  }, [data, loading]);
+
   // Robust greeting derived from live calibrated time
   const greeting = React.useMemo(() => {
     if (!liveTime) return 'Good morning';

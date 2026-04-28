@@ -23,8 +23,8 @@ interface EngineeringCardProps {
   onEdit?: () => void;
 }
 
-export const EngineeringCard: React.FC<EngineeringCardProps> = ({ 
-  projects, 
+export const EngineeringCard: React.FC<EngineeringCardProps> = ({
+  projects,
   health,
   editMode,
   onEdit
@@ -68,14 +68,14 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
   return (
     <div className="card h-full flex flex-col relative group">
       {editMode && onEdit && (
-        <button 
+        <button
           onClick={onEdit}
           className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
         >
           <Edit2 size={14} />
         </button>
       )}
-      
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -85,7 +85,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       </div>
 
       {/* Project statuses */}
-      <div 
+      <div
         ref={scrollRef}
         className="space-y-7 flex-1 max-h-[180px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full no-scrollbar"
       >
