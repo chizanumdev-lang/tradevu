@@ -211,3 +211,31 @@ export async function fetchEngineering(
     })),
   };
 }
+
+// ─── 7. Last System Update Timestamp ──────────────────────────────────────────
+export async function fetchLastUpdateTimestamp(
+  supabase: SupabaseClient
+): Promise<string | undefined> {
+  const [ops, pay, customers, revenue, launch] = await Promise.all([
+    supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+    supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+    supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+    supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+    supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+  ]);
+
+  const dates = [
+    ops.data?.recorded_at,
+    pay.data?.recorded_at,
+    customers.data?.recorded_at,
+    revenue.data?.recorded_at,
+    launch.data?.recorded_at
+  ]
+    .filter(Boolean)
+    .map(d => new Date(d).getTime());
+
+  if (dates.length > 0) {
+    return new Date(Math.max(...dates)).toISOString();
+  }
+  return undefined;
+}

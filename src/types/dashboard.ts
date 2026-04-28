@@ -114,4 +114,5 @@ export interface DashboardData {
   payWeekly: WeeklyPay;
   engineering: EngineeringData;
   engineeringRoadmap: EngineeringProject[];
+  lastUpdateTimestamp?: string;
 }

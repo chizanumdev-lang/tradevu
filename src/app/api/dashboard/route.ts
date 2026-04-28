@@ -7,6 +7,7 @@ import {
   fetchOpsWeekly,
   fetchPayWeekly,
   fetchEngineering,
+  fetchLastUpdateTimestamp,
 } from '@/lib/queries';
 import { DashboardData } from '@/types/dashboard';
 
@@ -21,6 +22,7 @@ export async function GET() {
       opsWeekly,
       payWeekly,
       engineering,
+      lastUpdateTimestamp,
     ] = await Promise.all([
       fetchCustomerMetrics(supabase),
       fetchRevenueAnnual(supabase),
@@ -28,6 +30,7 @@ export async function GET() {
       fetchOpsWeekly(supabase),
       fetchPayWeekly(supabase),
       fetchEngineering(supabase),
+      fetchLastUpdateTimestamp(supabase),
     ]);
 
     const payload: DashboardData = {
@@ -38,6 +41,7 @@ export async function GET() {
       payWeekly,
       engineering,
       engineeringRoadmap: engineering.projects,
+      lastUpdateTimestamp,
     };
 
     return NextResponse.json(payload);

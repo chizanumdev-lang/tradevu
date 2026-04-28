@@ -19,17 +19,43 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const pStart = periodStart ?? defaultPeriodStart;
+    const { data: existing } = await supabase
       .from('customer_metrics')
-      .insert({
-        period_start: periodStart ?? defaultPeriodStart,
-        total_customers: totalCustomers,
-        monthly_goal: monthlyGoal ?? 500,
-        active_monthly: activeMonthly,
-        recorded_at: now.toISOString(),
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('period_start', pStart)
+      .limit(1);
+
+    let data, error;
+    if (existing && existing.length > 0) {
+      const result = await supabase
+        .from('customer_metrics')
+        .update({
+          total_customers: totalCustomers,
+          monthly_goal: monthlyGoal ?? 500,
+          active_monthly: activeMonthly,
+          recorded_at: now.toISOString(),
+        })
+        .eq('id', existing[0].id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('customer_metrics')
+        .insert({
+          period_start: pStart,
+          total_customers: totalCustomers,
+          monthly_goal: monthlyGoal ?? 500,
+          active_monthly: activeMonthly,
+          recorded_at: now.toISOString(),
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw new Error(error.message);
 

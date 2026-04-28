@@ -11,20 +11,48 @@ import { DashboardData } from '@/types/dashboard';
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [greeting, setGreeting] = useState('Good morning');
 
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const currentDate = data?.lastUpdateTimestamp 
+    ? new Date(data.lastUpdateTimestamp).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }) 
+    : 'Loading...';
 
-  useEffect(() => {
+  const fetchDashboard = () => {
     fetch('/api/dashboard')
       .then(res => res.json())
-      .then(d => { setData(d); setLoading(false); })
+      .then(d => { 
+        setData(d); 
+        setLoading(false); 
+        setLastFetched(new Date()); 
+      })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+    
+    const updateGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) setGreeting('Good morning');
+      else if (hour < 17) setGreeting('Good afternoon');
+      else setGreeting('Good evening');
+    };
+    
+    updateGreeting();
+
+    const interval = setInterval(() => {
+      fetchDashboard();
+      updateGreeting();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -67,7 +95,7 @@ node scripts/create-tables.mjs
     <main className="max-w-[1440px] mx-auto px-10 py-10">
       {/* ── Header ────────────────────────────────── */}
       <header className="mb-8">
-        <p className="text-[13px] font-semibold text-slate-400 mb-1">✳ Good morning, Team!</p>
+        <p className="text-[13px] font-semibold text-slate-400 mb-1">✳ {greeting}, Team!</p>
         <div className="flex justify-between items-end">
           <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
             FY&apos;26 Operating Scoreboard

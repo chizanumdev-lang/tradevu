@@ -63,6 +63,7 @@ export default function AdminPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const fetchDashboard = () => {
     setLoading(true);
@@ -85,6 +86,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchDashboard();
+    setMounted(true);
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -119,14 +121,69 @@ export default function AdminPage() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (payload: any) => {
-    if (!editingSection) return;
+  const handleSave = async () => {
+    if (!editingSection || !metrics) return;
     setSavingSection(editingSection);
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const headers = { 'Content-Type': 'application/json' };
+      let res;
+      if (editingSection === 'revenue') {
+        res = await fetch('/api/metrics/revenue/annual', {
+          method: 'POST', headers, body: JSON.stringify({ goal: metrics.revenueAnnual.goal, current: metrics.revenueAnnual.current })
+        });
+      } else if (editingSection === 'customers') {
+        res = await fetch('/api/metrics/customers/monthly', {
+          method: 'POST', headers, body: JSON.stringify({
+            totalCustomers: metrics.customersMonthly.current,
+            monthlyGoal: metrics.customersMonthly.goal,
+            activeMonthly: metrics.customersMonthly.activeMonthly
+          })
+        });
+      } else if (editingSection === 'ops') {
+        res = await fetch('/api/ops/weekly', {
+          method: 'POST', headers, body: JSON.stringify({
+            weeklyGoal: metrics.opsWeekly.weeklyGoal,
+            visits: metrics.opsWeekly.visits,
+            conversations: metrics.opsWeekly.conversations,
+            usersConverted: metrics.opsWeekly.usersConverted || 0
+          })
+        });
+      } else if (editingSection === 'pay') {
+        res = await fetch('/api/pay/weekly', {
+          method: 'POST', headers, body: JSON.stringify({
+            weeklyGoal: metrics.payWeekly.weeklyGoal,
+            conversations: metrics.payWeekly.conversations,
+            usersConverted: metrics.payWeekly.usersConverted || 0,
+            lcyTransfers: metrics.payWeekly.transfers[0]?.current || 0,
+            lcyGoal: metrics.payWeekly.transfers[0]?.goal || 0,
+            fcyTransfers: metrics.payWeekly.transfers[1]?.current || 0,
+            fcyGoal: metrics.payWeekly.transfers[1]?.goal || 0
+          })
+        });
+      } else if (editingSection === 'launch') {
+        res = await fetch('/api/launch/status', {
+          method: 'POST', headers, body: JSON.stringify({
+            phase: metrics.launchStatus.phase,
+            deptTargets: metrics.launchStatus.deptTargets
+          })
+        });
+      } else if (editingSection === 'engineering') {
+        res = await fetch('/api/engineering/milestone', {
+          method: 'POST', headers, body: JSON.stringify({
+            projects: metrics.engineering.projects,
+            health: metrics.engineering.health
+          })
+        });
+      }
+      
+      if (res && !res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save');
+      }
+
       setMessage({ type: 'success', text: `${editingSection.toUpperCase()} updated successfully.` });
       setIsModalOpen(false);
+      fetchDashboard();
     } catch (err) {
       setMessage({ type: 'error', text: `Failed to update ${editingSection}.` });
     } finally {
@@ -207,9 +264,13 @@ export default function AdminPage() {
     );
   }
 
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
-  });
+  const displayDate = mounted ? 
+    (metrics?.lastUpdateTimestamp 
+      ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+        }) 
+      : 'Loading...') 
+    : 'Loading...';
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -272,7 +333,7 @@ export default function AdminPage() {
               FY&apos;26 Operating Scoreboard
             </h1>
             <p className="text-[13px] font-semibold text-slate-400">
-              Last updated: {currentDate}
+              Last updated: {displayDate}
             </p>
           </div>
         </header>
@@ -388,6 +449,7 @@ export default function AdminPage() {
                     <InputGroup label="Weekly Visits Goal" value={metrics.opsWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, weeklyGoal: Number(v)}})} />
                     <InputGroup label="Current Visits" value={metrics.opsWeekly.visits} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, visits: Number(v)}})} />
                     <InputGroup label="Conversations" value={metrics.opsWeekly.conversations} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, conversations: Number(v)}})} />
+                    <InputGroup label="Users Converted" value={metrics.opsWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, usersConverted: Number(v)}})} />
                   </>
                 )}
 
@@ -395,6 +457,7 @@ export default function AdminPage() {
                   <>
                     <InputGroup label="Engagement Goal" value={metrics.payWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, weeklyGoal: Number(v)}})} />
                     <InputGroup label="Total Conversations" value={metrics.payWeekly.conversations} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, conversations: Number(v)}})} />
+                    <InputGroup label="Users Converted" value={metrics.payWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, usersConverted: Number(v)}})} />
                     <div className="pt-4 border-t border-slate-100">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Transfer Channels</p>
                       <div className="space-y-4">
@@ -444,6 +507,8 @@ export default function AdminPage() {
                     </div>
                   </>
                 )}
+
+
 
                 {editingSection === 'settings' && (
                   <div className="space-y-10">
@@ -571,73 +636,120 @@ export default function AdminPage() {
                 )}
                 {editingSection === 'engineering' && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Roadmap</p>
-                      <button 
-                        onClick={() => {
-                          const newProject: EngineeringProject = { 
-                            id: `proj-${Date.now()}`,
-                            title: 'New Project', 
-                            status: 'In Development', 
-                            dateValue: 'Q2 2026',
-                            dateLabel: 'Target',
-                            description: 'Core infrastructure expansion'
-                          };
-                          setMetrics({...metrics, engineering: {...metrics.engineering, projects: [...metrics.engineering.projects, newProject]}});
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all"
-                      >
-                        <Plus size={12} />
-                        Add Project
-                      </button>
-                    </div>
-                    {metrics.engineering.projects.map((p, i) => (
-                      <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 relative group">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engineering Projects</p>
                         <button 
                           onClick={() => {
-                            const updated = metrics.engineering.projects.filter((_, index) => index !== i);
-                            setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                            const newProject: EngineeringProject = { 
+                              id: `proj-${Date.now()}`,
+                              title: 'New Project', 
+                              name: 'New Project',
+                              status: 'In Development', 
+                              dateValue: 'Q2 2026',
+                              dateLabel: 'Target',
+                              description: 'Core infrastructure expansion'
+                            };
+                            setMetrics({...metrics, engineering: {...metrics.engineering, projects: [...metrics.engineering.projects, newProject]}});
                           }}
-                          className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                          title="Remove Project"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all"
                         >
-                          <Trash2 size={16} />
+                          <Plus size={12} />
+                          Add Project
                         </button>
-                        <div className="pr-10">
-                          <InputGroup label="Project Title" value={p.title} onChange={(v) => {
-                            const updated = [...metrics.engineering.projects];
-                            updated[i].title = v;
-                            setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
-                          }} />
-                        </div>
-                        <div className="flex gap-4">
-                          <select 
-                            value={p.status}
-                            onChange={(e) => {
-                              const updated = [...metrics.engineering.projects];
-                              updated[i].status = e.target.value as any;
-                              setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
-                            }}
-                            className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                          >
-                            <option value="In Development">In Development</option>
-                            <option value="Testing">Testing</option>
-                            <option value="Live">Live</option>
-                          </select>
-                          <input 
-                            type="text" 
-                            value={p.dateValue}
-                            onChange={(e) => {
-                              const updated = [...metrics.engineering.projects];
-                              updated[i].dateValue = e.target.value;
-                              setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
-                            }}
-                            className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                            placeholder="Target Date"
-                          />
-                        </div>
                       </div>
-                    ))}
+                      <div className="space-y-4">
+                        {metrics.engineering.projects.map((p, i) => (
+                          <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative group">
+                            <button 
+                              onClick={() => {
+                                const updated = metrics.engineering.projects.filter((_, index) => index !== i);
+                                setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                              }}
+                              className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                              title="Remove Project"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                            <div className="pr-10">
+                              <InputGroup label="Project Title" value={p.title || p.name || ''} onChange={(v) => {
+                                const updated = [...metrics.engineering.projects];
+                                updated[i].title = v;
+                                updated[i].name = v;
+                                setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                              }} />
+                            </div>
+                            <div className="flex gap-4">
+                              <div className="flex-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+                                <select value={p.status || 'In Development'} onChange={(e) => {
+                                  const updated = [...metrics.engineering.projects];
+                                  updated[i].status = e.target.value as "Live" | "In Development" | "Testing";
+                                  setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                                }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1">
+                                  <option value="Live">Live</option>
+                                  <option value="In Development">In Development</option>
+                                  <option value="Testing">Testing</option>
+                                </select>
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Date Label (Target/Deployed)</label>
+                                <input type="text" value={p.dateLabel || ''} onChange={(e) => {
+                                  const updated = [...metrics.engineering.projects];
+                                  updated[i].dateLabel = e.target.value;
+                                  setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                                }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1" placeholder="e.g. TARGET" />
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Date Value</label>
+                                <input type="text" value={p.dateValue || ''} onChange={(e) => {
+                                  const updated = [...metrics.engineering.projects];
+                                  updated[i].dateValue = e.target.value;
+                                  setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                                }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1" placeholder="e.g. May 2026" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">System Health</p>
+                      <div className="space-y-4">
+                        {metrics.engineering.health.map((h, i) => (
+                          <div key={i} className="flex gap-3 items-end">
+                            <div className="flex-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Metric Label</label>
+                              <input type="text" value={h.label || ''} onChange={(e) => {
+                                const updated = [...metrics.engineering.health];
+                                updated[i].label = e.target.value;
+                                setMetrics({...metrics, engineering: {...metrics.engineering, health: updated}});
+                              }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" />
+                            </div>
+                            <div className="w-24">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Value</label>
+                              <input type="text" value={h.value || ''} onChange={(e) => {
+                                const updated = [...metrics.engineering.health];
+                                updated[i].value = e.target.value;
+                                setMetrics({...metrics, engineering: {...metrics.engineering, health: updated}});
+                              }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" />
+                            </div>
+                            <div className="w-24">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+                              <select value={h.isGood ? 'good' : 'bad'} onChange={(e) => {
+                                const updated = [...metrics.engineering.health];
+                                updated[i].isGood = e.target.value === 'good';
+                                setMetrics({...metrics, engineering: {...metrics.engineering, health: updated}});
+                              }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold">
+                                <option value="good">Good</option>
+                                <option value="bad">Warning</option>
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -29,10 +29,36 @@ export async function POST(request: Request) {
     weekStart.setDate(now.getDate() - diff);
     const weekStartStr = weekStart.toISOString().split('T')[0];
 
-    const { data, error } = await supabase
+    const { data: existing } = await supabase
       .from('pay_weekly')
-      .upsert(
-        {
+      .select('id')
+      .eq('week_start', weekStartStr)
+      .limit(1);
+
+    let data, error;
+
+    if (existing && existing.length > 0) {
+      const result = await supabase
+        .from('pay_weekly')
+        .update({
+          weekly_goal: weeklyGoal,
+          conversations,
+          users_converted: usersConverted,
+          lcy_transfers: lcyTransfers,
+          lcy_goal: lcyGoal ?? 2,
+          fcy_transfers: fcyTransfers,
+          fcy_goal: fcyGoal ?? 2,
+          recorded_at: new Date().toISOString(),
+        })
+        .eq('id', existing[0].id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('pay_weekly')
+        .insert({
           week_start: weekStartStr,
           weekly_goal: weeklyGoal,
           conversations,
@@ -42,11 +68,12 @@ export async function POST(request: Request) {
           fcy_transfers: fcyTransfers,
           fcy_goal: fcyGoal ?? 2,
           recorded_at: new Date().toISOString(),
-        },
-        { onConflict: 'week_start' }
-      )
-      .select()
-      .single();
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw new Error(error.message);
 

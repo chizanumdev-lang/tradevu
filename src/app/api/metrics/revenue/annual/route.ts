@@ -17,16 +17,40 @@ export async function POST(request: Request) {
     const year = fiscalYear ?? new Date().getFullYear();
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { data: existing } = await supabase
       .from('revenue_annual')
-      .insert({
-        fiscal_year: year,
-        goal,
-        current,
-        recorded_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('fiscal_year', year)
+      .limit(1);
+
+    let data, error;
+    if (existing && existing.length > 0) {
+      const result = await supabase
+        .from('revenue_annual')
+        .update({
+          goal,
+          current,
+          recorded_at: new Date().toISOString(),
+        })
+        .eq('id', existing[0].id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('revenue_annual')
+        .insert({
+          fiscal_year: year,
+          goal,
+          current,
+          recorded_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw new Error(error.message);
 

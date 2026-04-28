@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, MessageSquare, TrendingUp, ChevronDown, Edit2 } from 'lucide-react';
+import { Users, DollarSignIcon,TrendingUp, ChevronDown, Edit2 } from 'lucide-react';
 
 interface OpsCardProps {
   type: 'OPS' | 'PAY';
@@ -23,7 +23,7 @@ export const OpsCard: React.FC<OpsCardProps> = ({
   onEdit,
 }) => {
   const isOps = type === 'OPS';
-  const Icon = isOps ? Users : MessageSquare;
+  const Icon = isOps ? Users : DollarSignIcon;
   const title = isOps ? 'Operations' : 'Tradevu Pay';
   const progress = Math.min(Math.round((mainMetric.current / mainMetric.goal) * 100), 100);
 
@@ -61,7 +61,14 @@ export const OpsCard: React.FC<OpsCardProps> = ({
       </div>
 
       <div className="mt-auto space-y-5 pt-2">
-        {/* Sub metric (Conversations for OPS) */}
+
+        {/* Conversion rate */}
+        <div className={subMetric ? '' : 'pt-4 border-t border-slate-100'}>
+          <div className="text-[13px] font-bold text-slate-400 mb-1">{conversion.label}</div>
+          <div className="text-[26px] font-black text-primary">{conversion.value}%</div>
+        </div>
+
+        {/* Sub metric (Conversions for OPS) */}
         {subMetric && (
           <div className="pt-4 border-t border-slate-100">
             <div className="text-[13px] font-bold text-slate-400 mb-2">{subMetric.label}</div>
@@ -75,11 +82,7 @@ export const OpsCard: React.FC<OpsCardProps> = ({
           </div>
         )}
 
-        {/* Conversion rate */}
-        <div className={subMetric ? '' : 'pt-4 border-t border-slate-100'}>
-          <div className="text-[13px] font-bold text-slate-400 mb-1">{conversion.label}</div>
-          <div className="text-[26px] font-black text-primary">{conversion.value}%</div>
-        </div>
+        
 
         {/* List metrics (LCY/FCY for PAY) */}
         {listMetrics && listMetrics.length > 0 && (
