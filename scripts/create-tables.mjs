@@ -135,6 +135,18 @@ select * from (values
   ('Downtime (30d)',       '0.5h',  false, 2)
 ) as v(label, value, is_good, sort_order)
 where not exists (select 1 from engineering_health limit 1);
+
+-- ── 8. Dashboard Settings ───────────────────────────────────
+create table if not exists dashboard_settings (
+  id            uuid primary key default gen_random_uuid(),
+  scroll_speed  int not null default 8,
+  scroll_enabled boolean not null default true,
+  updated_at    timestamptz not null default now()
+);
+
+insert into dashboard_settings (scroll_speed, scroll_enabled)
+select 8, true
+where not exists (select 1 from dashboard_settings limit 1);
 `;
 
 async function run() {

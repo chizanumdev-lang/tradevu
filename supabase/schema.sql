@@ -91,6 +91,15 @@ create table if not exists engineering_health (
   updated_at  timestamptz not null default now()
 );
 
+-- ── 8. Dashboard Settings ───────────────────────────────────
+-- Global controls for the TV display (scroll speed, toggle).
+create table if not exists dashboard_settings (
+  id            uuid primary key default gen_random_uuid(),
+  scroll_speed  int not null default 8,          -- pixels per second
+  scroll_enabled boolean not null default true,
+  updated_at    timestamptz not null default now()
+);
+
 -- =============================================================
 -- Seed data — safe to re-run (uses INSERT … ON CONFLICT DO NOTHING
 -- on a unique constraint we add per table for idempotency).
@@ -133,4 +142,9 @@ on conflict do nothing;
 insert into engineering_health (label, value, is_good, sort_order) values
   ('Transaction Success', '98.2%', true,  1),
   ('Downtime (30d)',       '0.5h',  false, 2)
+on conflict do nothing;
+
+-- Dashboard settings seed
+insert into dashboard_settings (scroll_speed, scroll_enabled) values
+  (8, true)
 on conflict do nothing;
