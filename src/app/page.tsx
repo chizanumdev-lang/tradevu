@@ -100,14 +100,22 @@ export default function Dashboard() {
     };
   }, [data, loading]);
 
-  // Robust greeting derived from live calibrated time
+  // Robust greeting derived from live calibrated time (in Lagos context)
   const greeting = React.useMemo(() => {
     if (!liveTime) return 'Good morning';
-    const hour = liveTime.getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
+    
+    // Get the hour specifically in the Lagos timezone (UTC+1)
+    const lagosHour = Number(new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Africa/Lagos'
+    }).format(liveTime));
+
+    if (lagosHour < 12) return 'Good morning';
+    if (lagosHour < 17) return 'Good afternoon';
     return 'Good evening';
   }, [liveTime]);
+
 
   const liveTimeString = liveTime?.toLocaleTimeString('en-US', {
     hour: 'numeric',

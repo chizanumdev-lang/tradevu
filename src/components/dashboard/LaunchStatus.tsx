@@ -32,15 +32,16 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
   if (!slide) return null;
 
   return (
-    <div className="card h-full flex flex-col relative group overflow-hidden">
+    <div className="card h-full flex flex-col relative group">
       {editMode && onEdit && (
         <button 
           onClick={onEdit}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-[100] animate-in zoom-in"
+          className="absolute -top-3 -right-3 w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-xl hover:scale-110 transition-transform z-[100] animate-in zoom-in"
         >
-          <Edit2 size={14} />
+          <Edit2 size={16} />
         </button>
       )}
+
       
       <div className="flex justify-between items-start mb-4">
         <div className="section-label">Launch Readiness</div>
@@ -49,7 +50,8 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
         </div>
       </div>
 
-      <div key={currentIndex} className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col flex-1">
+      <div key={currentIndex} className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col flex-1 overflow-hidden">
+
         <h3 className="text-[22px] font-black text-slate-900 mb-4">{slide.phase} targets</h3>
 
         <div className="progress-track h-2.5 mb-8">
