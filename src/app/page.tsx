@@ -108,9 +108,9 @@ node scripts/create-tables.mjs
   }
 
   return (
-    <main className="max-w-[1440px] mx-auto px-10 py-10">
+    <main className="h-screen w-full flex flex-col overflow-hidden px-10 py-6 max-w-none">
       {/* ── Header ────────────────────────────────── */}
-      <header className="mb-8">
+      <header className="mb-6 flex-none">
         <div className="flex justify-between items-start mb-1">
           <p className="text-[13px] font-semibold text-slate-400">✳ {greeting}, Team!</p>
           <div className="text-right">
@@ -128,8 +128,8 @@ node scripts/create-tables.mjs
       </header>
 
       {/* ── Scoreboard border ─────────────────────── */}
-      <div className="scoreboard-wrap">
-        <div className="grid grid-cols-3 gap-6">
+      <div className="scoreboard-wrap flex-1 min-h-0">
+        <div className="grid grid-cols-3 grid-rows-2 gap-6 h-full">
 
           {/* ── Row 1 ── */}
           <LaunchStatus
