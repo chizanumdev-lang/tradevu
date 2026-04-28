@@ -16,12 +16,13 @@ export default function Dashboard() {
 
   // Derive last updated date for the small text
   const currentDate = data?.lastUpdateTimestamp 
-    ? new Date(data.lastUpdateTimestamp).toLocaleDateString('en-US', {
+    ? new Date(data.lastUpdateTimestamp).toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
+        timeZone: 'Africa/Lagos'
       }) 
     : 'Loading...';
 
@@ -158,7 +159,11 @@ node scripts/create-tables.mjs
       <header className="mb-8">
         <div className="flex justify-between items-start mb-1">
           <p className="text-[13px] font-semibold text-slate-400">✳ {greeting}, Team!</p>
-          <div className="text-right">
+          <div className="text-right flex items-center gap-3">
+            <div className="flex items-center gap-2 px-2 py-1 bg-mint-bg text-mint-dark rounded text-[10px] font-bold uppercase tracking-wider animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-mint-dark"></span>
+              Live
+            </div>
             <p className="text-xl font-black text-slate-900 tracking-tight tabular-nums">{liveTimeString}</p>
           </div>
         </div>
