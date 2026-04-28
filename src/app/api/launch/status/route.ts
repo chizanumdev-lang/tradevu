@@ -28,15 +28,23 @@ export async function POST(request: Request) {
 
 
     const allRows: any[] = [];
-    for (const p of phases) {
+    const now = new Date();
+    
+    for (let i = 0; i < phases.length; i++) {
+      const p = phases[i];
+      // Subtract i seconds to ensure reverse chronological order matching the array order
+      // (The first item in 'phases' will have the newest timestamp)
+      const timestamp = new Date(now.getTime() - i * 1000).toISOString();
+      
       const rows = p.deptTargets.map((d) => ({
         phase: p.phase,
         dept_name: d.name,
         progress: d.progress,
-        recorded_at: new Date().toISOString(),
+        recorded_at: timestamp,
       }));
       allRows.push(...rows);
     }
+
 
 
     const { data, error } = await supabase

@@ -534,7 +534,7 @@ export default function AdminPage() {
                     <div className="space-y-12 pb-10">
                       {/* Current Quarter Section */}
                       <div className="p-8 bg-purple-50/50 rounded-[40px] border border-purple-100 relative group">
-                        <div className="absolute -top-3 left-8 px-3 py-1 bg-[#8B5CF6] text-white text-[9px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-purple-200">Current Quarter</div>
+                        <div className="absolute -top-3 left-8 px-3 py-1 bg-[#8B5CF6] text-white text-[9px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-purple-200">Current Active</div>
                         
                         <div className="grid grid-cols-2 gap-6 mb-8">
                           <InputGroup label="Phase Name" value={metrics.launchStatus.phase} onChange={(v) => setMetrics({...metrics, launchStatus: {...metrics.launchStatus, phase: v}})} />
@@ -570,6 +570,7 @@ export default function AdminPage() {
                       {(metrics.launchHistory || []).map((q, idx) => (
                         <div key={idx} className="p-8 bg-white rounded-[40px] border border-slate-100 shadow-sm relative group">
                           <div className="absolute -top-3 left-8 px-3 py-1 bg-slate-400 text-white text-[9px] font-black rounded-full uppercase tracking-widest">History #{idx + 1}</div>
+
                           
                           <div className="absolute -top-3 right-8 flex gap-2">
                             {deleteConfirmIndex === idx ? (
@@ -598,17 +599,32 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             ) : (
-                              <button 
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setDeleteConfirmIndex(idx);
-                                }}
-                                className="px-3 py-1 bg-white border border-slate-100 text-slate-400 hover:text-rose-500 hover:border-rose-100 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all"
-                              >
-                                Delete Quarter
-                              </button>
+                              <>
+                                <button 
+                                  onClick={() => {
+                                    const oldCurrent = metrics.launchStatus;
+                                    const newCurrent = metrics.launchHistory![idx];
+                                    const newHistory = [...metrics.launchHistory!];
+                                    newHistory[idx] = oldCurrent;
+                                    setMetrics({ ...metrics, launchStatus: newCurrent, launchHistory: newHistory });
+                                  }}
+                                  className="px-3 py-1 bg-white border border-slate-100 text-slate-400 hover:text-purple-600 hover:border-purple-100 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all"
+                                >
+                                  Set as Current
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setDeleteConfirmIndex(idx);
+                                  }}
+                                  className="px-3 py-1 bg-white border border-slate-100 text-slate-400 hover:text-rose-500 hover:border-rose-100 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all"
+                                >
+                                  Delete Quarter
+                                </button>
+                              </>
                             )}
                           </div>
+
 
 
 

@@ -21,6 +21,11 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    setCurrentIndex(0);
+  }, [current, history.length]);
+
+
+  useEffect(() => {
     if (allSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % allSlides.length);
