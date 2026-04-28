@@ -61,9 +61,9 @@ export default function Dashboard() {
 
     let animationId: number;
     let lastTime = 0;
-    const speed = 15; // pixels per second
-    let direction = 1; // 1 for down, -1 for up
+    let direction = 1;
     let isPausing = false;
+    let currentY = window.scrollY;
 
     const animate = (time: number) => {
       if (!lastTime) {
@@ -80,21 +80,21 @@ export default function Dashboard() {
         return;
       }
 
-      const currentScroll = window.scrollY;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
-      if (maxScroll <= 10) {
-        // Not enough content to scroll
-        return;
-      }
+      if (maxScroll <= 10) return;
 
-      if (direction === 1 && currentScroll >= maxScroll) {
+      currentY += 30 * delta * direction; // Increased speed to 30px/s
+
+      if (direction === 1 && currentY >= maxScroll) {
+        currentY = maxScroll;
         isPausing = true;
         setTimeout(() => {
           direction = -1;
           isPausing = false;
         }, 4000);
-      } else if (direction === -1 && currentScroll <= 0) {
+      } else if (direction === -1 && currentY <= 0) {
+        currentY = 0;
         isPausing = true;
         setTimeout(() => {
           direction = 1;
@@ -102,7 +102,7 @@ export default function Dashboard() {
         }, 4000);
       }
 
-      window.scrollBy(0, speed * delta * direction);
+      window.scrollTo(0, currentY);
       animationId = requestAnimationFrame(animate);
     };
 
@@ -129,7 +129,8 @@ export default function Dashboard() {
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
-    hour12: true
+    hour12: true,
+    timeZone: 'Africa/Lagos' // Force UTC+1 to match user's local time
   }) || '';
 
   if (loading) {

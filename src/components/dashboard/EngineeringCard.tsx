@@ -37,20 +37,26 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
 
     let animationId: number;
     let lastTime = 0;
-    const speed = 15; // pixels per second
+    let currentScroll = el.scrollTop;
+    const speed = 25; // pixels per second
 
     const animate = (time: number) => {
-      if (!lastTime) lastTime = time;
+      if (!lastTime) {
+        lastTime = time;
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
       const delta = (time - lastTime) / 1000;
       lastTime = time;
 
+      currentScroll += speed * delta;
+
       // When we reach the bottom, stay there for a moment then reset
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
-        // Simple loop back to top
-        el.scrollTop = 0;
-      } else {
-        el.scrollTop += speed * delta;
+      if (currentScroll + el.clientHeight >= el.scrollHeight) {
+        currentScroll = 0;
       }
+      
+      el.scrollTop = currentScroll;
       animationId = requestAnimationFrame(animate);
     };
 
