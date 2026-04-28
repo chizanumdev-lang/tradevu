@@ -38,7 +38,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
     let animationId: number;
     let lastTime = 0;
     let currentScroll = el.scrollTop;
-    const speed = 12; // pixels per second
+    const speed = 8; // pixels per second
 
     const animate = (time: number) => {
       if (!lastTime) {
@@ -93,7 +93,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       {/* Project statuses */}
       <div
         ref={scrollRef}
-        className="space-y-7 flex-1 max-h-[180px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full no-scrollbar"
+        className="space-y-7 flex-1 max-h-[180px] overflow-y-auto no-scrollbar"
       >
         {projects.map((project) => (
           <div key={project.title} className="flex justify-between items-start">

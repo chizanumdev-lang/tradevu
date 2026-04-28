@@ -77,5 +77,13 @@
 }
 
 /* Hide scrollbar globally */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+html::-webkit-scrollbar, 
+body::-webkit-scrollbar, 
+.no-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+
+html, body, .no-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}

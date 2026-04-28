@@ -79,7 +79,7 @@ export default function Dashboard() {
 
       if (maxScroll <= 10) return;
 
-      currentY += 12 * delta; // Constant slow speed (12px/s)
+      currentY += 8 * delta; // Constant slow speed (8px/s)
 
       if (currentY >= maxScroll) {
         currentY = 0; // Immediate reset to top for a constant loop
