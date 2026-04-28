@@ -386,7 +386,7 @@ export default function AdminPage() {
                 trend: 0,
               }}
               conversion={{
-                label: 'Conversation → Conversion Rate',
+                label: 'Visits → Conversion Rate',
                 value: metrics.opsWeekly.conversionRate,
               }}
               editMode={editMode && canEdit('ops')}

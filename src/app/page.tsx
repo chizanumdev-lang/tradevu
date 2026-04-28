@@ -27,7 +27,7 @@ export default function Dashboard() {
     : 'Loading...';
 
   const fetchDashboard = () => {
-    fetch('/api/dashboard')
+    fetch(`/api/dashboard?t=${Date.now()}`)
       .then(res => res.json())
       .then(d => { 
         if (d.serverTime) {
@@ -211,8 +211,8 @@ node scripts/create-tables.mjs
             }}
             subMetric={{
               label: 'Conversions',
-              value: data.opsWeekly.conversations,
-              trend: 0, // week-over-week trend calculated server-side if needed
+              value: data.opsWeekly.usersConverted,
+              trend: 0,
             }}
             conversion={{
               label: 'Visits → Conversion Rate',

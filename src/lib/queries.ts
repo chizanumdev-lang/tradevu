@@ -30,6 +30,7 @@ export async function fetchCustomerMetrics(
     .from('customer_metrics')
     .select('total_customers, monthly_goal, active_monthly, period_start')
     .order('period_start', { ascending: false })
+    .order('recorded_at', { ascending: false })
     .limit(2);
 
   if (error) throw new Error(`customer_metrics: ${error.message}`);
@@ -121,15 +122,16 @@ export async function fetchOpsWeekly(
   const { data, error } = await supabase
     .from('ops_weekly')
     .select(
-      'weekly_goal, visits, conversations, users_converted, week_start'
+      'weekly_goal, visits, conversations, users_converted, week_start, recorded_at'
     )
     .order('week_start', { ascending: false })
+    .order('recorded_at', { ascending: false })
     .limit(1)
     .single();
 
   if (error) throw new Error(`ops_weekly: ${error.message}`);
 
-  const conversionRate = toPercent(data.users_converted, data.conversations);
+  const conversionRate = toPercent(data.users_converted, data.visits);
 
   return {
     weeklyGoal: data.weekly_goal,
@@ -148,9 +150,10 @@ export async function fetchPayWeekly(
   const { data, error } = await supabase
     .from('pay_weekly')
     .select(
-      'weekly_goal, conversations, users_converted, lcy_transfers, lcy_goal, fcy_transfers, fcy_goal, week_start'
+      'weekly_goal, conversations, users_converted, lcy_transfers, lcy_goal, fcy_transfers, fcy_goal, week_start, recorded_at'
     )
     .order('week_start', { ascending: false })
+    .order('recorded_at', { ascending: false })
     .limit(1)
     .single();
 
@@ -254,25 +257,25 @@ export async function fetchLastUpdateTimestamp(
   supabase: SupabaseClient
 ): Promise<string | undefined> {
   const [ops, pay, customers, revenue, launch, engProjects, engHealth, settings] = await Promise.all([
-    supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
-    supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
-    supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
-    supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
-    supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
-    supabase.from('engineering_projects').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
-    supabase.from('engineering_health').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
-    supabase.from('dashboard_settings').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
+    supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('engineering_projects').select('updated_at').order('updated_at', { ascending: false }).limit(1),
+    supabase.from('engineering_health').select('updated_at').order('updated_at', { ascending: false }).limit(1),
+    supabase.from('dashboard_settings').select('updated_at').order('updated_at', { ascending: false }).limit(1),
   ]);
 
   const dates = [
-    ops.data?.recorded_at,
-    pay.data?.recorded_at,
-    customers.data?.recorded_at,
-    revenue.data?.recorded_at,
-    launch.data?.recorded_at,
-    engProjects.data?.updated_at,
-    engHealth.data?.updated_at,
-    settings.data?.updated_at
+    ops.data?.[0]?.recorded_at,
+    pay.data?.[0]?.recorded_at,
+    customers.data?.[0]?.recorded_at,
+    revenue.data?.[0]?.recorded_at,
+    launch.data?.[0]?.recorded_at,
+    engProjects.data?.[0]?.updated_at,
+    engHealth.data?.[0]?.updated_at,
+    settings.data?.[0]?.updated_at
   ]
     .filter(Boolean)
     .map(d => new Date(d).getTime());
