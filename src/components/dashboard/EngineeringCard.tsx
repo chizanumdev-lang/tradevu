@@ -21,24 +21,28 @@ interface EngineeringCardProps {
   health: HealthMetric[];
   editMode?: boolean;
   onEdit?: () => void;
+  scrollSpeed?: number;
+  scrollEnabled?: boolean;
 }
 
 export const EngineeringCard: React.FC<EngineeringCardProps> = ({
   projects,
   health,
   editMode,
-  onEdit
+  onEdit,
+  scrollSpeed = 8,
+  scrollEnabled = true
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const el = scrollRef.current;
-    if (!el || projects.length <= 2) return; // Only scroll if there are many projects
+    if (!el || projects.length <= 2 || !scrollEnabled) return; // Only scroll if enabled and many projects
 
     let animationId: number;
     let lastTime = 0;
     let currentScroll = el.scrollTop;
-    const speed = 8; // pixels per second
+    const speed = scrollSpeed; // Dynamic pixels per second
 
     const animate = (time: number) => {
       if (!lastTime) {

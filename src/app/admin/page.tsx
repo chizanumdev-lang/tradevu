@@ -174,6 +174,13 @@ export default function AdminPage() {
             health: metrics.engineering.health
           })
         });
+      } else if (editingSection === 'settings') {
+        res = await fetch('/api/settings', {
+          method: 'POST', headers, body: JSON.stringify({
+            scrollSpeed: metrics.settings.scrollSpeed,
+            scrollEnabled: metrics.settings.scrollEnabled
+          })
+        });
       }
       
       if (res && !res.ok) {
@@ -405,6 +412,8 @@ export default function AdminPage() {
             <EngineeringCard
               projects={metrics.engineering.projects}
               health={metrics.engineering.health}
+              scrollSpeed={metrics.settings.scrollSpeed}
+              scrollEnabled={metrics.settings.scrollEnabled}
               editMode={editMode && canEdit('engineering')}
               onEdit={() => handleOpenEdit('engineering')}
             />
@@ -536,6 +545,56 @@ export default function AdminPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Dashboard Behavior Section - CEO/HR ONLY */}
+                    {(currentUser?.role === 'CEO' || currentUser?.role === 'HR') && (
+                      <div className="pt-10 border-t border-slate-100 space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <LayoutDashboard size={18} className="text-primary" />
+                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Dashboard Behavior</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Auto-Scroll</label>
+                            <div className="flex items-center gap-3">
+                              <button 
+                                onClick={() => setMetrics({...metrics, settings: {...metrics.settings, scrollEnabled: !metrics.settings.scrollEnabled}})}
+                                className={`w-14 h-7 rounded-full relative transition-all duration-300 ${metrics.settings.scrollEnabled ? 'bg-mint-dark' : 'bg-slate-300'}`}
+                              >
+                                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 ${metrics.settings.scrollEnabled ? 'translate-x-7' : ''}`} />
+                              </button>
+                              <span className="text-sm font-bold text-slate-700">
+                                {metrics.settings.scrollEnabled ? 'Enabled' : 'Disabled'}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                              When enabled, the dashboard will slowly reveal all metrics via a continuous loop.
+                            </p>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scroll Speed</label>
+                              <span className="text-xs font-black text-primary">{metrics.settings.scrollSpeed} px/s</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="2" 
+                              max="30" 
+                              step="2"
+                              value={metrics.settings.scrollSpeed}
+                              onChange={(e) => setMetrics({...metrics, settings: {...metrics.settings, scrollSpeed: Number(e.target.value)}})}
+                              className="w-full accent-primary h-2 bg-slate-200 rounded-lg cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[8px] font-bold text-slate-400 uppercase">
+                              <span>Slower</span>
+                              <span>Faster</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Governance Section - Only for CEO/HR */}
                     {(currentUser?.role === 'CEO' || currentUser?.role === 'HR') && (

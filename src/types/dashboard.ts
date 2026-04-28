@@ -114,6 +114,10 @@ export interface DashboardData {
   payWeekly: WeeklyPay;
   engineering: EngineeringData;
   engineeringRoadmap: EngineeringProject[];
+  settings: {
+    scrollSpeed: number;
+    scrollEnabled: boolean;
+  };
   lastUpdateTimestamp?: string;
   serverTime?: string;
 }

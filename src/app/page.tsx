@@ -58,7 +58,7 @@ export default function Dashboard() {
 
   // Global auto-scroll to reveal everything slowly
   useEffect(() => {
-    if (loading || !data) return;
+    if (loading || !data || !data.settings.scrollEnabled) return;
 
     let animationId: number;
     let lastTime = 0;
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
       if (maxScroll <= 10) return;
 
-      currentY += 8 * delta; // Constant slow speed (8px/s)
+      currentY += data.settings.scrollSpeed * delta; // Dynamic speed from settings
 
       if (currentY >= maxScroll) {
         currentY = 0; // Immediate reset to top for a constant loop
@@ -237,6 +237,8 @@ node scripts/create-tables.mjs
           <EngineeringCard
             projects={data.engineering.projects}
             health={data.engineering.health}
+            scrollSpeed={data.settings.scrollSpeed}
+            scrollEnabled={data.settings.scrollEnabled}
           />
 
         </div>

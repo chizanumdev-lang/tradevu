@@ -63,7 +63,7 @@ export const OpsCard: React.FC<OpsCardProps> = ({
       <div className="mt-auto space-y-5 pt-2">
 
         {/* Conversion rate */}
-        <div className={subMetric ? '' : 'pt-4 border-t border-slate-100'}>
+        <div className='pt-4 border-t border-slate-100'>
           <div className="text-[13px] font-bold text-slate-400 mb-1">{conversion.label}</div>
           <div className="text-[26px] font-black text-primary">{conversion.value}%</div>
         </div>

@@ -212,11 +212,48 @@ export async function fetchEngineering(
   };
 }
 
-// ─── 7. Last System Update Timestamp ──────────────────────────────────────────
+// ─── 7. Dashboard Settings ────────────────────────────────────────────────────
+export async function fetchDashboardSettings(
+  supabase: SupabaseClient
+) {
+  const { data, error } = await supabase
+    .from('dashboard_settings')
+    .select('scroll_speed, scroll_enabled')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.warn('dashboard_settings:', error.message);
+    return { scrollSpeed: 8, scrollEnabled: true };
+  }
+
+  return {
+    scrollSpeed: data.scroll_speed,
+    scrollEnabled: data.scroll_enabled,
+  };
+}
+
+export async function updateDashboardSettings(
+  supabase: SupabaseClient,
+  settings: { scrollSpeed: number; scrollEnabled: boolean }
+) {
+  const { error } = await supabase
+    .from('dashboard_settings')
+    .insert({
+      scroll_speed: settings.scrollSpeed,
+      scroll_enabled: settings.scrollEnabled,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) throw new Error(`dashboard_settings: ${error.message}`);
+}
+
+// ─── 8. Last System Update Timestamp ──────────────────────────────────────────
 export async function fetchLastUpdateTimestamp(
   supabase: SupabaseClient
 ): Promise<string | undefined> {
-  const [ops, pay, customers, revenue, launch, engProjects, engHealth] = await Promise.all([
+  const [ops, pay, customers, revenue, launch, engProjects, engHealth, settings] = await Promise.all([
     supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
@@ -224,6 +261,7 @@ export async function fetchLastUpdateTimestamp(
     supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('engineering_projects').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
     supabase.from('engineering_health').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
+    supabase.from('dashboard_settings').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
   ]);
 
   const dates = [
@@ -233,7 +271,8 @@ export async function fetchLastUpdateTimestamp(
     revenue.data?.recorded_at,
     launch.data?.recorded_at,
     engProjects.data?.updated_at,
-    engHealth.data?.updated_at
+    engHealth.data?.updated_at,
+    settings.data?.updated_at
   ]
     .filter(Boolean)
     .map(d => new Date(d).getTime());
