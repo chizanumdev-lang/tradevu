@@ -10,11 +10,10 @@ export async function POST(request: Request) {
     if (
       typeof weeklyGoal !== 'number' ||
       typeof visits !== 'number' ||
-      typeof conversations !== 'number' ||
       typeof usersConverted !== 'number'
     ) {
       return NextResponse.json(
-        { error: 'weeklyGoal, visits, conversations, and usersConverted are required numbers.' },
+        { error: 'weeklyGoal, visits, and usersConverted are required numbers.' },
         { status: 400 }
       );
     }
@@ -31,11 +30,12 @@ export async function POST(request: Request) {
 
     const { data: existing } = await supabase
       .from('ops_weekly')
-      .select('id')
+      .select('id, conversations')
       .eq('week_start', weekStartStr)
       .limit(1);
 
     let data, error;
+    const finalConversations = typeof conversations === 'number' ? conversations : (existing?.[0]?.conversations || 0);
 
     if (existing && existing.length > 0) {
       const result = await supabase
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         .update({
           weekly_goal: weeklyGoal,
           visits,
-          conversations,
+          conversations: finalConversations,
           users_converted: usersConverted,
           recorded_at: new Date().toISOString(),
         })
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
           week_start: weekStartStr,
           weekly_goal: weeklyGoal,
           visits,
-          conversations,
+          conversations: finalConversations,
           users_converted: usersConverted,
           recorded_at: new Date().toISOString(),
         })
@@ -92,14 +92,14 @@ export async function GET() {
     if (error) throw new Error(error.message);
 
     const conversionRate =
-      data.conversations > 0
-        ? Math.min(100, Math.round((data.users_converted / data.conversations) * 100))
+      data.visits > 0
+        ? Math.min(100, Math.round((data.users_converted / data.visits) * 100))
         : 0;
 
     return NextResponse.json({
       weeklyGoal: data.weekly_goal,
       visits: data.visits,
-      conversations: data.conversations,
+      usersConverted: data.users_converted,
       conversionRate,
     });
   } catch (err) {

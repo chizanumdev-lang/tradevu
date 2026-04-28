@@ -40,9 +40,12 @@ export interface LaunchStatus {
   /** Overall (average) progress 0-100 */
   progress: number;
   deptTargets: DeptTarget[];
+  /** Optional label for history/slideshow */
+  label?: string;
 }
 
 // ─── Ops Weekly ───────────────────────────────────────────────────────────────
+
 export interface WeeklyOps {
   weeklyGoal: number;
   /** Total visits this week */
@@ -110,6 +113,7 @@ export interface DashboardData {
   customersMonthly: CustomerMetrics;
   revenueAnnual: RevenueMetrics;
   launchStatus: LaunchStatus;
+  launchHistory?: LaunchStatus[];
   opsWeekly: WeeklyOps;
   payWeekly: WeeklyPay;
   engineering: EngineeringData;

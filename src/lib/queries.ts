@@ -11,7 +11,9 @@ import {
   WeeklyOps,
   WeeklyPay,
   EngineeringData,
+  DeptTarget
 } from '@/types/dashboard';
+
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,8 +84,7 @@ export async function fetchRevenueAnnual(
 // ─── 3. Launch readiness ──────────────────────────────────────────────────────
 export async function fetchLaunchStatus(
   supabase: SupabaseClient
-): Promise<LaunchStatus> {
-  // Grab the latest row per dept (distinct on dept_name, ordered by recorded_at desc)
+): Promise<{ current: LaunchStatus; history: LaunchStatus[] }> {
   const { data, error } = await supabase
     .from('launch_readiness')
     .select('phase, dept_name, progress, recorded_at')
@@ -91,29 +92,38 @@ export async function fetchLaunchStatus(
 
   if (error) throw new Error(`launch_readiness: ${error.message}`);
 
-  // De-duplicate: keep only the newest row per dept
-  const seen = new Set<string>();
-  const deptTargets: { name: string; progress: number }[] = [];
-  let phase = 'Q2';
-
+  // Group by phase
+  const phaseMap: Record<string, { phase: string, deptTargets: DeptTarget[], latestDate: string }> = {};
+  
   for (const row of data ?? []) {
-    if (!seen.has(row.dept_name)) {
-      seen.add(row.dept_name);
-      phase = row.phase;
-      deptTargets.push({ name: row.dept_name, progress: row.progress });
+    if (!phaseMap[row.phase]) {
+      phaseMap[row.phase] = { phase: row.phase, deptTargets: [], latestDate: row.recorded_at };
+    }
+    if (!phaseMap[row.phase].deptTargets.find(d => d.name === row.dept_name)) {
+      phaseMap[row.phase].deptTargets.push({ name: row.dept_name, progress: row.progress });
     }
   }
 
-  const overall =
-    deptTargets.length > 0
-      ? Math.round(
-          deptTargets.reduce((sum, d) => sum + d.progress, 0) /
-            deptTargets.length
-        )
+  const allQuarters = Object.values(phaseMap).map(p => {
+    const overall = p.deptTargets.length > 0
+      ? Math.round(p.deptTargets.reduce((s, d) => s + d.progress, 0) / p.deptTargets.length)
       : 0;
+    return { phase: p.phase, progress: overall, deptTargets: p.deptTargets, label: p.phase };
+  });
 
-  return { phase, progress: overall, deptTargets };
+  // Sort by latest update date desc
+  allQuarters.sort((a, b) => {
+      const dateA = new Date(phaseMap[a.phase].latestDate).getTime();
+      const dateB = new Date(phaseMap[b.phase].latestDate).getTime();
+      return dateB - dateA;
+  });
+
+  return {
+    current: allQuarters[0] || { phase: 'Q2', progress: 0, deptTargets: [] },
+    history: allQuarters.slice(1)
+  };
 }
+
 
 // ─── 4. Ops weekly ────────────────────────────────────────────────────────────
 export async function fetchOpsWeekly(

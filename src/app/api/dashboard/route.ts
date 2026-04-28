@@ -39,8 +39,11 @@ export async function GET() {
     const payload: DashboardData = {
       customersMonthly,
       revenueAnnual,
-      launchStatus,
+      launchStatus: launchStatus.current,
+      launchHistory: launchStatus.history,
       opsWeekly,
+
+
       payWeekly,
       engineering,
       engineeringRoadmap: engineering.projects,
@@ -48,6 +51,8 @@ export async function GET() {
       settings,
       serverTime: new Date().toISOString(),
     };
+
+
 
     return NextResponse.json(payload);
   } catch (err) {

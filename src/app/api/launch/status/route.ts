@@ -5,36 +5,50 @@ import { createClient } from '@/utils/supabase/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phase, deptTargets } = body as {
-      phase: string;
-      deptTargets: { name: string; progress: number }[];
+    const { phases } = body as {
+      phases: { phase: string; label?: string; deptTargets: { name: string; progress: number }[] }[];
     };
 
-    if (!phase || !Array.isArray(deptTargets) || deptTargets.length === 0) {
+    if (!Array.isArray(phases) || phases.length === 0) {
       return NextResponse.json(
-        { error: 'phase (string) and deptTargets (array) are required.' },
+        { error: 'phases array is required.' },
         { status: 400 }
       );
     }
 
     const supabase = await createClient();
+    const phaseNames = phases.map(p => p.phase);
 
-    const rows = deptTargets.map((d) => ({
-      phase,
-      dept_name: d.name,
-      progress: d.progress,
-      recorded_at: new Date().toISOString(),
-    }));
+    // Clear ALL existing data to mirror the Admin Panel's current state (handles deletions)
+    await supabase
+      .from('launch_readiness')
+      .delete()
+      .not('id', 'is', null); 
+
+
+
+    const allRows: any[] = [];
+    for (const p of phases) {
+      const rows = p.deptTargets.map((d) => ({
+        phase: p.phase,
+        dept_name: d.name,
+        progress: d.progress,
+        recorded_at: new Date().toISOString(),
+      }));
+      allRows.push(...rows);
+    }
+
 
     const { data, error } = await supabase
       .from('launch_readiness')
-      .insert(rows)
+      .insert(allRows)
       .select();
 
     if (error) throw new Error(error.message);
 
     return NextResponse.json({ success: true, data });
   } catch (err) {
+
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[POST /api/launch/status]', message);
     return NextResponse.json({ error: message }, { status: 500 });

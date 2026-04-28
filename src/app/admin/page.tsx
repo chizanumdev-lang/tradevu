@@ -7,8 +7,9 @@ import {
   ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
   DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check
 } from 'lucide-react';
-import { DashboardData, EngineeringProject, Role, User } from '@/types/dashboard';
+import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
+
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
@@ -64,6 +65,8 @@ export default function AdminPage() {
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
+
 
   const fetchDashboard = () => {
     setLoading(true);
@@ -161,12 +164,14 @@ export default function AdminPage() {
           })
         });
       } else if (editingSection === 'launch') {
+        const phases = [
+          { phase: metrics.launchStatus.phase, label: metrics.launchStatus.label || 'Current', deptTargets: metrics.launchStatus.deptTargets },
+          ...(metrics.launchHistory || []).map(h => ({ phase: h.phase, label: h.label, deptTargets: h.deptTargets }))
+        ];
         res = await fetch('/api/launch/status', {
-          method: 'POST', headers, body: JSON.stringify({
-            phase: metrics.launchStatus.phase,
-            deptTargets: metrics.launchStatus.deptTargets
-          })
+          method: 'POST', headers, body: JSON.stringify({ phases })
         });
+
       } else if (editingSection === 'engineering') {
         res = await fetch('/api/engineering/milestone', {
           method: 'POST', headers, body: JSON.stringify({
@@ -349,12 +354,12 @@ export default function AdminPage() {
         {metrics && (
           <div className="grid grid-cols-3 gap-6">
             <LaunchStatus
-              phase={metrics.launchStatus.phase}
-              overallProgress={metrics.launchStatus.progress}
-              deptTargets={metrics.launchStatus.deptTargets}
+              current={metrics.launchStatus}
+              history={metrics.launchHistory}
               editMode={editMode && canEdit('launch')}
               onEdit={() => handleOpenEdit('launch')}
             />
+
 
             <RevenueRing
               goal={metrics.revenueAnnual.goal}
@@ -382,7 +387,7 @@ export default function AdminPage() {
               }}
               subMetric={{
                 label: 'Conversions',
-                value: metrics.opsWeekly.conversations,
+                value: metrics.opsWeekly.usersConverted || 0,
                 trend: 0,
               }}
               conversion={{
@@ -440,14 +445,14 @@ export default function AdminPage() {
               <div className="space-y-6 max-h-[50vh] overflow-y-auto px-1 pr-4">
                 {editingSection === 'revenue' && (
                   <>
-                    <InputGroup label="Annual Goal ($)" value={metrics.revenueAnnual.goal} onChange={(v) => setMetrics({...metrics, revenueAnnual: {...metrics.revenueAnnual, goal: Number(v)}})} />
+                    <InputGroup label="Annual Goal ($)" value={metrics.revenueAnnual.goal} onChange={(v) => setMetrics({...metrics, revenueAnnual: {...metrics.revenueAnnual, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
                     <InputGroup label="Current Revenue ($)" value={metrics.revenueAnnual.current} onChange={(v) => setMetrics({...metrics, revenueAnnual: {...metrics.revenueAnnual, current: Number(v)}})} />
                   </>
                 )}
                 
                 {editingSection === 'customers' && (
                   <>
-                    <InputGroup label="Monthly Goal" value={metrics.customersMonthly.goal} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, goal: Number(v)}})} />
+                    <InputGroup label="Monthly Goal" value={metrics.customersMonthly.goal} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
                     <InputGroup label="Total Customers" value={metrics.customersMonthly.current} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, current: Number(v)}})} />
                     <InputGroup label="Active Monthly" value={metrics.customersMonthly.activeMonthly} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, activeMonthly: Number(v)}})} />
                   </>
@@ -455,16 +460,15 @@ export default function AdminPage() {
 
                 {editingSection === 'ops' && (
                   <>
-                    <InputGroup label="Weekly Visits Goal" value={metrics.opsWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, weeklyGoal: Number(v)}})} />
+                    <InputGroup label="Weekly Visits Goal" value={metrics.opsWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, weeklyGoal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
                     <InputGroup label="Current Visits" value={metrics.opsWeekly.visits} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, visits: Number(v)}})} />
-                    <InputGroup label="Conversations" value={metrics.opsWeekly.conversations} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, conversations: Number(v)}})} />
                     <InputGroup label="Users Converted" value={metrics.opsWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, usersConverted: Number(v)}})} />
                   </>
                 )}
 
                 {editingSection === 'pay' && (
                   <>
-                    <InputGroup label="Engagement Goal" value={metrics.payWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, weeklyGoal: Number(v)}})} />
+                    <InputGroup label="Engagement Goal" value={metrics.payWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, weeklyGoal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
                     <InputGroup label="Total Conversations" value={metrics.payWeekly.conversations} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, conversations: Number(v)}})} />
                     <InputGroup label="Users Converted" value={metrics.payWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, usersConverted: Number(v)}})} />
                     <div className="pt-4 border-t border-slate-100">
@@ -491,31 +495,168 @@ export default function AdminPage() {
                 )}
 
                 {editingSection === 'launch' && (
-                  <>
-                    <InputGroup label="Phase Name" value={metrics.launchStatus.phase} onChange={(v) => setMetrics({...metrics, launchStatus: {...metrics.launchStatus, phase: v}})} />
-                    <div className="pt-4 border-t border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Department Progress (%)</p>
-                      <div className="space-y-4">
-                        {metrics.launchStatus.deptTargets.map((d, i) => (
-                          <div key={i} className="flex items-center gap-4">
-                            <span className="text-xs font-bold text-slate-600 w-24">{d.name}</span>
-                            <input 
-                              type="range" min="0" max="100" 
-                              value={d.progress} 
-                              onChange={(e) => {
-                                const updated = [...metrics.launchStatus.deptTargets];
-                                updated[i].progress = Number(e.target.value);
-                                setMetrics({...metrics, launchStatus: {...metrics.launchStatus, deptTargets: updated}});
-                              }}
-                              className="flex-1 accent-primary" 
-                            />
-                            <span className="text-xs font-bold text-slate-400 w-8">{d.progress}%</span>
-                          </div>
-                        ))}
+                  <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Multi-Quarter Launch</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Configure history & current roadmap</p>
                       </div>
+                      <button 
+                        onClick={() => {
+                          const baseDepts = (metrics.launchStatus.deptTargets && metrics.launchStatus.deptTargets.length > 0)
+                            ? metrics.launchStatus.deptTargets 
+                            : [
+                                { name: 'Operations', progress: 0 }, 
+                                { name: 'Pay', progress: 0 }, 
+                                { name: 'Engineering', progress: 0 }
+                              ];
+                          
+                          const newQ: LaunchStatusType = { 
+                            phase: `New Phase`, 
+                            label: `Historical Quarter`, 
+                            progress: 0, 
+                            deptTargets: baseDepts.map(d => ({ name: d.name, progress: 0 })) 
+                          };
+                          
+                          setMetrics({ 
+                            ...metrics, 
+                            launchHistory: [newQ, ...(metrics.launchHistory || [])] 
+                          });
+                        }}
+                        className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg hover:scale-105 transition-all"
+                      >
+                        Add Quarter
+                      </button>
+
+
                     </div>
-                  </>
+
+                    <div className="space-y-12 pb-10">
+                      {/* Current Quarter Section */}
+                      <div className="p-8 bg-purple-50/50 rounded-[40px] border border-purple-100 relative group">
+                        <div className="absolute -top-3 left-8 px-3 py-1 bg-[#8B5CF6] text-white text-[9px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-purple-200">Current Quarter</div>
+                        
+                        <div className="grid grid-cols-2 gap-6 mb-8">
+                          <InputGroup label="Phase Name" value={metrics.launchStatus.phase} onChange={(v) => setMetrics({...metrics, launchStatus: {...metrics.launchStatus, phase: v}})} />
+                          <InputGroup label="Visual Label" value={metrics.launchStatus.label || 'Current'} onChange={(v) => setMetrics({...metrics, launchStatus: {...metrics.launchStatus, label: v}})} />
+                        </div>
+
+                        <div className="space-y-6">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dept Progress (%)</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                            {metrics.launchStatus.deptTargets.map((d, i) => (
+                              <div key={i} className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{d.name}</span>
+                                  <span className="text-[11px] font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-lg">{d.progress}%</span>
+                                </div>
+                                <input 
+                                  type="range" min="0" max="100" 
+                                  value={d.progress} 
+                                  onChange={(e) => {
+                                    const updated = [...metrics.launchStatus.deptTargets];
+                                    updated[i].progress = Number(e.target.value);
+                                    setMetrics({...metrics, launchStatus: {...metrics.launchStatus, deptTargets: updated}});
+                                  }}
+                                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]" 
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* History Quarters */}
+                      {(metrics.launchHistory || []).map((q, idx) => (
+                        <div key={idx} className="p-8 bg-white rounded-[40px] border border-slate-100 shadow-sm relative group">
+                          <div className="absolute -top-3 left-8 px-3 py-1 bg-slate-400 text-white text-[9px] font-black rounded-full uppercase tracking-widest">History #{idx + 1}</div>
+                          
+                          <div className="absolute -top-3 right-8 flex gap-2">
+                            {deleteConfirmIndex === idx ? (
+                              <div className="flex items-center gap-2 animate-in slide-in-from-right-2 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 shadow-sm">
+                                <span className="text-[9px] font-black text-rose-500 uppercase tracking-tight">Are you sure?</span>
+                                <div className="flex gap-1 ml-1">
+                                  <button 
+                                    onClick={() => {
+                                      const currentHistory = metrics.launchHistory || [];
+                                      const updated = currentHistory.filter((_, i) => i !== idx);
+                                      setMetrics({ ...metrics, launchHistory: updated });
+                                      setDeleteConfirmIndex(null);
+                                    }}
+                                    className="w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                                    title="Confirm Delete"
+                                  >
+                                    <Check size={10} strokeWidth={4} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setDeleteConfirmIndex(null)}
+                                    className="w-5 h-5 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-300 transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X size={10} strokeWidth={4} />
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setDeleteConfirmIndex(idx);
+                                }}
+                                className="px-3 py-1 bg-white border border-slate-100 text-slate-400 hover:text-rose-500 hover:border-rose-100 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all"
+                              >
+                                Delete Quarter
+                              </button>
+                            )}
+                          </div>
+
+
+
+                          <div className="grid grid-cols-2 gap-6 mb-8">
+                            <InputGroup label="Phase Name" value={q.phase} onChange={(v) => {
+                              const updated = [...(metrics.launchHistory || [])];
+                              updated[idx].phase = v;
+                              setMetrics({...metrics, launchHistory: updated});
+                            }} />
+                            <InputGroup label="Visual Label" value={q.label || q.phase} onChange={(v) => {
+                              const updated = [...(metrics.launchHistory || [])];
+                              updated[idx].label = v;
+                              setMetrics({...metrics, launchHistory: updated});
+                            }} />
+                          </div>
+
+                          <div className="space-y-6">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dept Progress (%)</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 opacity-80 group-hover:opacity-100 transition-opacity">
+                              {(q.deptTargets || []).map((d, i) => (
+                                <div key={i} className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{d.name}</span>
+                                    <span className="text-[11px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{d.progress}%</span>
+                                  </div>
+                                  <input 
+                                    type="range" min="0" max="100" 
+                                    value={d.progress} 
+                                    onChange={(e) => {
+                                      const updated = [...(metrics.launchHistory || [])];
+                                      const updatedDepts = [...updated[idx].deptTargets];
+                                      updatedDepts[i] = { ...updatedDepts[i], progress: Number(e.target.value) };
+                                      updated[idx] = { ...updated[idx], deptTargets: updatedDepts };
+                                      setMetrics({...metrics, launchHistory: updated});
+                                    }}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-400" 
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                    </div>
+                  </div>
                 )}
+
 
 
 
@@ -837,15 +978,21 @@ export default function AdminPage() {
   );
 }
 
-function InputGroup({ label, value, onChange, type = 'text' }: { label: string, value: string | number, onChange: (v: string) => void, type?: string }) {
+function InputGroup({ label, value, onChange, type = 'text', disabled = false }: { label: string, value: string | number, onChange: (v: string) => void, type?: string, disabled?: boolean }) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <div className="flex justify-between items-center px-1">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+        {disabled && (
+          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded">CEO ONLY</span>
+        )}
+      </div>
       <input 
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+        disabled={disabled}
+        className={`w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all ${disabled ? 'opacity-50 grayscale cursor-not-allowed border-dashed' : ''}`}
       />
     </div>
   );

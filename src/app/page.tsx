@@ -182,10 +182,11 @@ node scripts/create-tables.mjs
         <div className="grid grid-cols-3 gap-6">
 
           {/* ── Row 1 ── */}
-          <LaunchStatus
-            phase={data.launchStatus.phase}
-            overallProgress={data.launchStatus.progress}
-            deptTargets={data.launchStatus.deptTargets}
+         <CustomerCard
+            total={data.customersMonthly.current}
+            goal={data.customersMonthly.goal}
+            activeMonthly={data.customersMonthly.activeMonthly}
+            trend={data.customersMonthly.percentageChange}
           />
 
           <RevenueRing
@@ -194,12 +195,12 @@ node scripts/create-tables.mjs
             percentage={data.revenueAnnual.percentage}
           />
 
-          <CustomerCard
-            total={data.customersMonthly.current}
-            goal={data.customersMonthly.goal}
-            activeMonthly={data.customersMonthly.activeMonthly}
-            trend={data.customersMonthly.percentageChange}
+          
+           <LaunchStatus
+            current={data.launchStatus}
+            history={data.launchHistory}
           />
+
 
           {/* ── Row 2 ── */}
           <OpsCard
