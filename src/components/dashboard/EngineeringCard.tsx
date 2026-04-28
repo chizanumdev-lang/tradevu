@@ -38,7 +38,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
     let animationId: number;
     let lastTime = 0;
     let currentScroll = el.scrollTop;
-    const speed = 25; // pixels per second
+    const speed = 12; // pixels per second
 
     const animate = (time: number) => {
       if (!lastTime) {

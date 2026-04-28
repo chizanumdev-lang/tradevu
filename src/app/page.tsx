@@ -75,31 +75,14 @@ export default function Dashboard() {
       const delta = (time - lastTime) / 1000;
       lastTime = time;
 
-      if (isPausing) {
-        animationId = requestAnimationFrame(animate);
-        return;
-      }
-
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
       if (maxScroll <= 10) return;
 
-      currentY += 30 * delta * direction; // Increased speed to 30px/s
+      currentY += 12 * delta; // Constant slow speed (12px/s)
 
-      if (direction === 1 && currentY >= maxScroll) {
-        currentY = maxScroll;
-        isPausing = true;
-        setTimeout(() => {
-          direction = -1;
-          isPausing = false;
-        }, 4000);
-      } else if (direction === -1 && currentY <= 0) {
-        currentY = 0;
-        isPausing = true;
-        setTimeout(() => {
-          direction = 1;
-          isPausing = false;
-        }, 4000);
+      if (currentY >= maxScroll) {
+        currentY = 0; // Immediate reset to top for a constant loop
       }
 
       window.scrollTo(0, currentY);
