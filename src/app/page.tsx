@@ -11,9 +11,10 @@ import { DashboardData } from '@/types/dashboard';
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  const [greeting, setGreeting] = useState('Good morning');
+  const [timeOffset, setTimeOffset] = useState<number>(0);
+  const [liveTime, setLiveTime] = useState<Date | null>(null);
 
+  // Derive last updated date for the small text
   const currentDate = data?.lastUpdateTimestamp 
     ? new Date(data.lastUpdateTimestamp).toLocaleDateString('en-US', {
         month: 'short',
@@ -28,32 +29,47 @@ export default function Dashboard() {
     fetch('/api/dashboard')
       .then(res => res.json())
       .then(d => { 
+        if (d.serverTime) {
+          const serverMs = new Date(d.serverTime).getTime();
+          const localMs = new Date().getTime();
+          setTimeOffset(serverMs - localMs);
+        }
         setData(d); 
         setLoading(false); 
-        setLastFetched(new Date()); 
       })
       .catch(() => setLoading(false));
   };
 
+  // Run initial fetch and setup polling
   useEffect(() => {
     fetchDashboard();
-    
-    const updateGreeting = () => {
-      const hour = new Date().getHours();
-      if (hour < 12) setGreeting('Good morning');
-      else if (hour < 17) setGreeting('Good afternoon');
-      else setGreeting('Good evening');
-    };
-    
-    updateGreeting();
-
-    const interval = setInterval(() => {
-      fetchDashboard();
-      updateGreeting();
-    }, 5000);
-    
+    const interval = setInterval(fetchDashboard, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Live clock ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTime(new Date(Date.now() + timeOffset));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeOffset]);
+
+  // Robust greeting derived from live calibrated time
+  const greeting = React.useMemo(() => {
+    if (!liveTime) return 'Good morning';
+    const hour = liveTime.getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, [liveTime]);
+
+  const liveTimeString = liveTime?.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }) || '';
 
   if (loading) {
     return (
@@ -95,12 +111,17 @@ node scripts/create-tables.mjs
     <main className="max-w-[1440px] mx-auto px-10 py-10">
       {/* ── Header ────────────────────────────────── */}
       <header className="mb-8">
-        <p className="text-[13px] font-semibold text-slate-400 mb-1">✳ {greeting}, Team!</p>
+        <div className="flex justify-between items-start mb-1">
+          <p className="text-[13px] font-semibold text-slate-400">✳ {greeting}, Team!</p>
+          <div className="text-right">
+            <p className="text-xl font-black text-slate-900 tracking-tight tabular-nums">{liveTimeString}</p>
+          </div>
+        </div>
         <div className="flex justify-between items-end">
           <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
             FY&apos;26 Operating Scoreboard
           </h1>
-          <p className="text-[13px] font-semibold text-slate-400">
+          <p className="text-[11px] font-semibold text-slate-400 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
             Last updated: {currentDate}
           </p>
         </div>

@@ -49,7 +49,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       </div>
 
       {/* Project statuses */}
-      <div className="space-y-7 flex-1">
+      <div className="space-y-7 flex-1 max-h-[180px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
         {projects.map((project) => (
           <div key={project.title} className="flex justify-between items-start">
             <div>

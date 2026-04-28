@@ -216,12 +216,14 @@ export async function fetchEngineering(
 export async function fetchLastUpdateTimestamp(
   supabase: SupabaseClient
 ): Promise<string | undefined> {
-  const [ops, pay, customers, revenue, launch] = await Promise.all([
+  const [ops, pay, customers, revenue, launch, engProjects, engHealth] = await Promise.all([
     supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
     supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1).single(),
+    supabase.from('engineering_projects').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
+    supabase.from('engineering_health').select('updated_at').order('updated_at', { ascending: false }).limit(1).single(),
   ]);
 
   const dates = [
@@ -229,7 +231,9 @@ export async function fetchLastUpdateTimestamp(
     pay.data?.recorded_at,
     customers.data?.recorded_at,
     revenue.data?.recorded_at,
-    launch.data?.recorded_at
+    launch.data?.recorded_at,
+    engProjects.data?.updated_at,
+    engHealth.data?.updated_at
   ]
     .filter(Boolean)
     .map(d => new Date(d).getTime());

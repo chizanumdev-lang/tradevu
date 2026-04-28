@@ -42,6 +42,7 @@ export async function GET() {
       engineering,
       engineeringRoadmap: engineering.projects,
       lastUpdateTimestamp,
+      serverTime: new Date().toISOString(),
     };
 
     return NextResponse.json(payload);

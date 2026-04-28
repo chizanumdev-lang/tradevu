@@ -115,4 +115,5 @@ export interface DashboardData {
   engineering: EngineeringData;
   engineeringRoadmap: EngineeringProject[];
   lastUpdateTimestamp?: string;
+  serverTime?: string;
 }
