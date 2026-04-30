@@ -22,6 +22,7 @@ const AUTHORIZED_USERS: User[] = [
   { email: 'habeeb@tradevu.co', name: 'Habeeb', role: 'ENGINEERING_LEAD', password: 'password123' },
   { email: 'chibueze@tradevu.co', name: 'Chibueze', role: 'PAY_LEAD', password: 'password123' },
   { email: 'adaora@tradevu.co', name: 'Adaora', role: 'OPS_LEAD', password: 'password123' },
+  { email: 'tope@tradevu.co', name: 'Tope', role: 'OPS_LEAD', password: 'password123' },
 ];
 
 const INITIAL_PERMISSIONS: Record<Role, string[]> = {
