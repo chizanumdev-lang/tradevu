@@ -10,6 +10,7 @@ import {
   LaunchStatus,
   WeeklyOps,
   WeeklyPay,
+  WeeklyFinance,
   EngineeringData,
   DeptTarget
 } from '@/types/dashboard';
@@ -183,7 +184,44 @@ export async function fetchPayWeekly(
   };
 }
 
-// ─── 6. Engineering ───────────────────────────────────────────────────────────
+// ─── 6. Finance weekly ────────────────────────────────────────────────────────
+export async function fetchFinanceWeekly(
+  supabase: SupabaseClient
+): Promise<WeeklyFinance> {
+  const { data, error } = await supabase
+    .from('finance_weekly')
+    .select(
+      'loan_disbursement_value, loan_disbursement_trend, loans_disbursed, loans_disbursed_trend, default_rate, default_rate_trend, week_start, recorded_at'
+    )
+    .order('week_start', { ascending: false })
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    // Return defaults if table doesn't exist or no data
+    console.warn('finance_weekly:', error.message);
+    return {
+      loanDisbursementValue: 2000000,
+      loanDisbursementTrend: 25,
+      loansDisbursed: 15,
+      loansDisbursedTrend: 25,
+      defaultRate: 12,
+      defaultRateTrend: 25,
+    };
+  }
+
+  return {
+    loanDisbursementValue: Number(data.loan_disbursement_value),
+    loanDisbursementTrend: data.loan_disbursement_trend,
+    loansDisbursed: data.loans_disbursed,
+    loansDisbursedTrend: data.loans_disbursed_trend,
+    defaultRate: Number(data.default_rate),
+    defaultRateTrend: data.default_rate_trend,
+  };
+}
+
+// ─── 7. Engineering ───────────────────────────────────────────────────────────
 export async function fetchEngineering(
   supabase: SupabaseClient
 ): Promise<EngineeringData> {
@@ -266,9 +304,10 @@ export async function updateDashboardSettings(
 export async function fetchLastUpdateTimestamp(
   supabase: SupabaseClient
 ): Promise<string | undefined> {
-  const [ops, pay, customers, revenue, launch, engProjects, engHealth, settings] = await Promise.all([
+  const [ops, pay, finance, customers, revenue, launch, engProjects, engHealth, settings] = await Promise.all([
     supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('finance_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
@@ -280,6 +319,7 @@ export async function fetchLastUpdateTimestamp(
   const dates = [
     ops.data?.[0]?.recorded_at,
     pay.data?.[0]?.recorded_at,
+    finance.data?.[0]?.recorded_at,
     customers.data?.[0]?.recorded_at,
     revenue.data?.[0]?.recorded_at,
     launch.data?.[0]?.recorded_at,

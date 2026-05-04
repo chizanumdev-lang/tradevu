@@ -13,6 +13,7 @@ import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
+import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 
 const AUTHORIZED_USERS: User[] = [
@@ -26,8 +27,8 @@ const AUTHORIZED_USERS: User[] = [
 ];
 
 const INITIAL_PERMISSIONS: Record<Role, string[]> = {
-  CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'engineering', 'users', 'settings'],
-  PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'engineering', 'settings'],
+  CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
+  PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'settings'],
   HR: ['launch', 'users', 'settings', 'ops', 'pay'],
   ENGINEERING_LEAD: ['engineering', 'settings'],
   PAY_LEAD: ['pay', 'settings'],
@@ -46,7 +47,7 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 const ALL_ROLES: Role[] = ['CEO', 'HR', 'PM', 'ENGINEERING_LEAD', 'PAY_LEAD', 'OPS_LEAD', 'GUEST'];
-const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'engineering', 'users', 'settings'];
+const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'];
 
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>(AUTHORIZED_USERS);
@@ -173,6 +174,17 @@ export default function AdminPage() {
           method: 'POST', headers, body: JSON.stringify({ phases })
         });
 
+      } else if (editingSection === 'finance') {
+        res = await fetch('/api/finance/weekly', {
+          method: 'POST', headers, body: JSON.stringify({
+            loanDisbursementValue: metrics.financeWeekly.loanDisbursementValue,
+            loanDisbursementTrend: metrics.financeWeekly.loanDisbursementTrend,
+            loansDisbursed: metrics.financeWeekly.loansDisbursed,
+            loansDisbursedTrend: metrics.financeWeekly.loansDisbursedTrend,
+            defaultRate: metrics.financeWeekly.defaultRate,
+            defaultRateTrend: metrics.financeWeekly.defaultRateTrend
+          })
+        });
       } else if (editingSection === 'engineering') {
         res = await fetch('/api/engineering/milestone', {
           method: 'POST', headers, body: JSON.stringify({
@@ -353,76 +365,100 @@ export default function AdminPage() {
 
         {/* ── Mirror Grid ─────────────────────── */}
         {metrics && (
-          <div className="grid grid-cols-3 gap-6">
-            <LaunchStatus
-              current={metrics.launchStatus}
-              history={metrics.launchHistory}
-              editMode={editMode && canEdit('launch')}
-              onEdit={() => handleOpenEdit('launch')}
-            />
+          <div className="grid grid-cols-12 gap-6">
+
+            {/* ── Top Row (3 cards, each 4 cols) ── */}
+            <div className="col-span-12 md:col-span-4">
+              <RevenueRing
+                goal={metrics.revenueAnnual.goal}
+                current={metrics.revenueAnnual.current}
+                percentage={metrics.revenueAnnual.percentage}
+                editMode={editMode && canEdit('revenue')}
+                onEdit={() => handleOpenEdit('revenue')}
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
+              <CustomerCard
+                total={metrics.customersMonthly.current}
+                goal={metrics.customersMonthly.goal}
+                activeMonthly={metrics.customersMonthly.activeMonthly}
+                trend={metrics.customersMonthly.percentageChange}
+                editMode={editMode && canEdit('customers')}
+                onEdit={() => handleOpenEdit('customers')}
+              />
+            </div>
+
+            <div className="col-span-12 md:col-span-4">
+               <LaunchStatus
+                current={metrics.launchStatus}
+                history={metrics.launchHistory}
+                editMode={editMode && canEdit('launch')}
+                onEdit={() => handleOpenEdit('launch')}
+              />
+            </div>
 
 
-            <RevenueRing
-              goal={metrics.revenueAnnual.goal}
-              current={metrics.revenueAnnual.current}
-              percentage={metrics.revenueAnnual.percentage}
-              editMode={editMode && canEdit('revenue')}
-              onEdit={() => handleOpenEdit('revenue')}
-            />
+            {/* ── Bottom Row (4 cards, each 3 cols) ── */}
+            <div className="col-span-12 md:col-span-3">
+              <OpsCard
+                type="OPS"
+                mainMetric={{
+                  label: 'Visits',
+                  current: metrics.opsWeekly.visits,
+                  goal: metrics.opsWeekly.weeklyGoal,
+                }}
+                subMetric={{
+                  label: 'Conversions',
+                  value: metrics.opsWeekly.usersConverted || 0,
+                  trend: 25,
+                }}
+                conversion={{
+                  label: 'Conversion Rate',
+                  value: metrics.opsWeekly.conversionRate,
+                }}
+                editMode={editMode && canEdit('ops')}
+                onEdit={() => handleOpenEdit('ops')}
+              />
+            </div>
 
-            <CustomerCard
-              total={metrics.customersMonthly.current}
-              goal={metrics.customersMonthly.goal}
-              activeMonthly={metrics.customersMonthly.activeMonthly}
-              trend={metrics.customersMonthly.percentageChange}
-              editMode={editMode && canEdit('customers')}
-              onEdit={() => handleOpenEdit('customers')}
-            />
+            <div className="col-span-12 md:col-span-3">
+              <OpsCard
+                type="PAY"
+                mainMetric={{
+                  label: 'Conversations',
+                  current: metrics.payWeekly.conversations,
+                  goal: metrics.payWeekly.weeklyGoal,
+                }}
+                conversion={{
+                  label: 'Conversation → Conversion Rate',
+                  value: metrics.payWeekly.conversionRate,
+                }}
+                listMetrics={metrics.payWeekly.transfers}
+                editMode={editMode && canEdit('pay')}
+                onEdit={() => handleOpenEdit('pay')}
+              />
+            </div>
 
-            <OpsCard
-              type="OPS"
-              mainMetric={{
-                label: 'Visits',
-                current: metrics.opsWeekly.visits,
-                goal: metrics.opsWeekly.weeklyGoal,
-              }}
-              subMetric={{
-                label: 'Conversions',
-                value: metrics.opsWeekly.usersConverted || 0,
-                trend: 0,
-              }}
-              conversion={{
-                label: 'Visits → Conversion Rate',
-                value: metrics.opsWeekly.conversionRate,
-              }}
-              editMode={editMode && canEdit('ops')}
-              onEdit={() => handleOpenEdit('ops')}
-            />
+            <div className="col-span-12 md:col-span-3">
+              <FinanceCard 
+                data={metrics.financeWeekly} 
+                editMode={editMode && canEdit('finance')}
+                onEdit={() => handleOpenEdit('finance')}
+              />
+            </div>
 
-            <OpsCard
-              type="PAY"
-              mainMetric={{
-                label: 'Conversations',
-                current: metrics.payWeekly.conversations,
-                goal: metrics.payWeekly.weeklyGoal,
-              }}
-              conversion={{
-                label: 'Conversation → Conversion Rate',
-                value: metrics.payWeekly.conversionRate,
-              }}
-              listMetrics={metrics.payWeekly.transfers}
-              editMode={editMode && canEdit('pay')}
-              onEdit={() => handleOpenEdit('pay')}
-            />
+            <div className="col-span-12 md:col-span-3">
+              <EngineeringCard
+                projects={metrics.engineering.projects}
+                health={metrics.engineering.health}
+                scrollSpeed={metrics.settings.scrollSpeed}
+                scrollEnabled={metrics.settings.scrollEnabled}
+                editMode={editMode && canEdit('engineering')}
+                onEdit={() => handleOpenEdit('engineering')}
+              />
+            </div>
 
-            <EngineeringCard
-              projects={metrics.engineering.projects}
-              health={metrics.engineering.health}
-              scrollSpeed={metrics.settings.scrollSpeed}
-              scrollEnabled={metrics.settings.scrollEnabled}
-              editMode={editMode && canEdit('engineering')}
-              onEdit={() => handleOpenEdit('engineering')}
-            />
           </div>
         )}
       </main>
@@ -492,6 +528,17 @@ export default function AdminPage() {
                         ))}
                       </div>
                     </div>
+                  </>
+                )}
+
+                {editingSection === 'finance' && (
+                  <>
+                    <InputGroup label="Loan Disbursement Value ($)" value={metrics.financeWeekly.loanDisbursementValue} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loanDisbursementValue: Number(v)}})} />
+                    <InputGroup label="Disbursement Trend (%)" value={metrics.financeWeekly.loanDisbursementTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loanDisbursementTrend: Number(v)}})} />
+                    <InputGroup label="Loans Disbursed" value={metrics.financeWeekly.loansDisbursed} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loansDisbursed: Number(v)}})} />
+                    <InputGroup label="Loans Disbursed Trend (%)" value={metrics.financeWeekly.loansDisbursedTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loansDisbursedTrend: Number(v)}})} />
+                    <InputGroup label="Default Rate (%)" value={metrics.financeWeekly.defaultRate} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, defaultRate: Number(v)}})} />
+                    <InputGroup label="Default Rate Trend (%)" value={metrics.financeWeekly.defaultRateTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, defaultRateTrend: Number(v)}})} />
                   </>
                 )}
 

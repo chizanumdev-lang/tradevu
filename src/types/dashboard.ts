@@ -84,6 +84,16 @@ export interface WeeklyPay {
   transfers: TransferMetric[];
 }
 
+// ─── Finance Weekly ───────────────────────────────────────────────────────────
+export interface WeeklyFinance {
+  loanDisbursementValue: number;
+  loanDisbursementTrend: number;
+  loansDisbursed: number;
+  loansDisbursedTrend: number;
+  defaultRate: number;
+  defaultRateTrend: number;
+}
+
 // ─── Engineering ──────────────────────────────────────────────────────────────
 export interface EngineeringProject {
   id: string;
@@ -116,6 +126,7 @@ export interface DashboardData {
   launchHistory?: LaunchStatus[];
   opsWeekly: WeeklyOps;
   payWeekly: WeeklyPay;
+  financeWeekly: WeeklyFinance;
   engineering: EngineeringData;
   engineeringRoadmap: EngineeringProject[];
   settings: {

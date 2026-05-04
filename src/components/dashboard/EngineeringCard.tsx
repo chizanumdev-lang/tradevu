@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import { Activity, CheckCircle2, Clock, Edit2 } from 'lucide-react';
+import { Terminal, CheckCircle2, Clock, Edit2 } from 'lucide-react';
 
 interface Project {
   title: string;
@@ -37,12 +35,12 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
 
   React.useEffect(() => {
     const el = scrollRef.current;
-    if (!el || projects.length <= 2 || !scrollEnabled) return; // Only scroll if enabled and many projects
+    if (!el || projects.length <= 2 || !scrollEnabled) return;
 
     let animationId: number;
     let lastTime = 0;
     let currentScroll = el.scrollTop;
-    const speed = scrollSpeed; // Dynamic pixels per second
+    const speed = scrollSpeed;
 
     const animate = (time: number) => {
       if (!lastTime) {
@@ -55,7 +53,6 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
 
       currentScroll += speed * delta;
 
-      // When we reach the bottom, stay there for a moment then reset
       if (currentScroll + el.clientHeight >= el.scrollHeight) {
         currentScroll = 0;
       }
@@ -64,7 +61,6 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       animationId = requestAnimationFrame(animate);
     };
 
-    // Delay start slightly
     const startTimeout = setTimeout(() => {
       animationId = requestAnimationFrame(animate);
     }, 2000);
@@ -73,7 +69,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       clearTimeout(startTimeout);
       cancelAnimationFrame(animationId);
     };
-  }, [projects]);
+  }, [projects, scrollSpeed, scrollEnabled]);
 
   return (
     <div className="card h-full flex flex-col relative group">
@@ -88,47 +84,47 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-          <Activity size={18} />
+        <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+          <Terminal size={20} />
         </div>
-        <span className="text-[17px] font-extrabold text-slate-800">Engineering</span>
+        <span className="text-[18px] font-black text-slate-900 leading-none">Engineering</span>
       </div>
 
       {/* Project statuses */}
       <div
         ref={scrollRef}
-        className="space-y-7 flex-1 max-h-[180px] overflow-y-auto no-scrollbar"
+        className="space-y-6 flex-1 max-h-[160px] overflow-y-auto no-scrollbar"
       >
-        {projects.map((project) => (
-          <div key={project.title} className="flex justify-between items-start">
-            <div>
-              <div className="text-[14px] font-semibold text-slate-400 mb-2">{project.title}</div>
-              <div className={project.status === 'Live' ? 'badge-live' : 'badge-dev'}>
+        {projects.map((project, idx) => (
+          <div key={idx} className="flex justify-between items-start pt-4 border-t border-slate-50 first:border-t-0 first:pt-0">
+            <div className="space-y-2">
+              <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{project.title}</div>
+              <div className="flex items-center gap-2 text-[14px] font-bold text-slate-900">
                 {project.status === 'Live'
-                  ? <CheckCircle2 size={16} />
-                  : <Clock size={16} />
+                  ? <CheckCircle2 size={16} className="text-mint-dark" />
+                  : <Clock size={16} className="text-amber-500" />
                 }
-                {project.status}
+                <span>{project.status}</span>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+            <div className="text-right space-y-1">
+              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
                 {project.dateLabel}
               </div>
-              <div className="text-[14px] font-black text-slate-700">{project.dateValue}</div>
+              <div className="text-[13px] font-bold text-slate-500">{project.dateValue}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* System Health */}
-      <div className="mt-8 pt-6 border-t border-slate-100">
-        <div className="section-label mb-4">System Health</div>
-        <div className="space-y-3">
+      <div className="mt-auto pt-6 border-t border-slate-50">
+        <div className="section-label mb-5 uppercase tracking-widest text-[11px] font-black text-slate-400">System Health</div>
+        <div className="space-y-4">
           {health.map((item) => (
-            <div key={item.label} className="flex justify-between items-center">
-              <span className="text-[15px] font-semibold text-slate-700">{item.label}</span>
-              <span className={`text-[15px] font-black ${item.isGood ? 'text-mint-dark' : 'text-slate-800'}`}>
+            <div key={item.label} className="flex justify-between items-baseline">
+              <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
+              <span className={`text-[18px] font-black ${item.isGood ? 'text-mint-dark' : 'text-slate-900'}`}>
                 {item.value}
               </span>
             </div>

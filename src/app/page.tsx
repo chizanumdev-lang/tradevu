@@ -5,6 +5,7 @@ import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
+import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 import { DashboardData } from '@/types/dashboard';
 
@@ -163,92 +164,106 @@ node scripts/create-tables.mjs
 
   return (
     <main className="max-w-[1440px] mx-auto px-10 py-10">
-      {/* ── Header ────────────────────────────────── */}
-      <header className="mb-8">
-        <div className="flex justify-between items-start mb-1">
-          <p className="text-[13px] font-semibold text-slate-400">✳ {greeting}, Team!</p>
-          <div className="text-right flex items-center gap-3">
-            <div className="flex items-center gap-2 px-2 py-1 bg-mint-bg text-mint-dark rounded text-[10px] font-bold uppercase tracking-wider animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-mint-dark"></span>
-              Live
-            </div>
-            <p className="text-xl font-black text-slate-900 tracking-tight tabular-nums">{liveTimeString}</p>
-          </div>
-        </div>
-        <div className="flex justify-between items-end">
-          <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
-            FY&apos;26 Operating Scoreboard
+      {/* ── Dashboard Header ────────────────────────────────────────── */}
+      <header className="mb-8 flex justify-between items-end">
+        <div>
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+            <span className="text-primary text-[16px]">✳</span> Operating Scoreboard
+          </p>
+          <h1 className="text-[42px] font-black text-slate-900 tracking-tight leading-none">
+            FY&apos;26 Mirror View
           </h1>
-          <p className="text-[11px] font-semibold text-slate-400 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
-            Last updated: {currentDate}
+        </div>
+        
+        <div className="text-right">
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-end gap-2">
+            ✳ Last updated
+          </p>
+          <p className="text-[18px] font-black text-slate-900 uppercase">
+            {displayDate}
           </p>
         </div>
       </header>
 
       {/* ── Scoreboard border ─────────────────────── */}
       <div className="scoreboard-wrap">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-12 gap-6">
 
-          {/* ── Row 1 ── */}
-         <CustomerCard
-            total={data.customersMonthly.current}
-            goal={data.customersMonthly.goal}
-            activeMonthly={data.customersMonthly.activeMonthly}
-            trend={data.customersMonthly.percentageChange}
-          />
+          {/* ── Top Row (3 cards, each 4 cols) ── */}
+          <div className="col-span-12 md:col-span-4">
+            <RevenueRing
+              goal={data.revenueAnnual.goal}
+              current={data.revenueAnnual.current}
+              percentage={data.revenueAnnual.percentage}
+            />
+          </div>
 
-          <RevenueRing
-            goal={data.revenueAnnual.goal}
-            current={data.revenueAnnual.current}
-            percentage={data.revenueAnnual.percentage}
-          />
+          <div className="col-span-12 md:col-span-4">
+            <CustomerCard
+              total={data.customersMonthly.current}
+              goal={data.customersMonthly.goal}
+              activeMonthly={data.customersMonthly.activeMonthly}
+              trend={data.customersMonthly.percentageChange}
+            />
+          </div>
 
-          
-           <LaunchStatus
-            current={data.launchStatus}
-            history={data.launchHistory}
-          />
+          <div className="col-span-12 md:col-span-4">
+             <LaunchStatus
+              current={data.launchStatus}
+              history={data.launchHistory}
+            />
+          </div>
 
 
-          {/* ── Row 2 ── */}
-          <OpsCard
-            type="OPS"
-            mainMetric={{
-              label: 'Visits',
-              current: data.opsWeekly.visits,
-              goal: data.opsWeekly.weeklyGoal,
-            }}
-            subMetric={{
-              label: 'Conversions',
-              value: data.opsWeekly.usersConverted,
-              trend: 0,
-            }}
-            conversion={{
-              label: 'Visits → Conversion Rate',
-              value: data.opsWeekly.conversionRate,
-            }}
-          />
+          {/* ── Bottom Row (4 cards, each 3 cols) ── */}
+          <div className="col-span-12 md:col-span-3">
+            <OpsCard
+              type="OPS"
+              mainMetric={{
+                label: 'Visits',
+                current: data.opsWeekly.visits,
+                goal: data.opsWeekly.weeklyGoal,
+              }}
+              subMetric={{
+                label: 'Conversions',
+                value: data.opsWeekly.usersConverted,
+                trend: 25, // Mock trend for now
+              }}
+              conversion={{
+                label: 'Conversion Rate',
+                value: data.opsWeekly.conversionRate,
+              }}
+            />
+          </div>
 
-          <OpsCard
-            type="PAY"
-            mainMetric={{
-              label: 'Conversations',
-              current: data.payWeekly.conversations,
-              goal: data.payWeekly.weeklyGoal,
-            }}
-            conversion={{
-              label: 'Conversation → Conversion Rate',
-              value: data.payWeekly.conversionRate,
-            }}
-            listMetrics={data.payWeekly.transfers}
-          />
+          <div className="col-span-12 md:col-span-3">
+            <OpsCard
+              type="PAY"
+              mainMetric={{
+                label: 'Conversations',
+                current: data.payWeekly.conversations,
+                goal: data.payWeekly.weeklyGoal,
+              }}
+              conversion={{
+                label: 'Conversation → Conversion Rate',
+                value: data.payWeekly.conversionRate,
+              }}
+              listMetrics={data.payWeekly.transfers}
+            />
+          </div>
 
-          <EngineeringCard
-            projects={data.engineering.projects}
-            health={data.engineering.health}
-            scrollSpeed={data.settings.scrollSpeed}
-            scrollEnabled={data.settings.scrollEnabled}
-          />
+          <div className="col-span-12 md:col-span-3">
+            <FinanceCard data={data.financeWeekly} />
+          </div>
+
+          <div className="col-span-12 md:col-span-3">
+            <EngineeringCard
+              projects={data.engineering.projects}
+              health={data.engineering.health}
+              scrollSpeed={data.settings.scrollSpeed}
+              scrollEnabled={data.settings.scrollEnabled}
+            />
+          </div>
 
         </div>
       </div>

@@ -66,6 +66,20 @@ create table if not exists pay_weekly (
   recorded_at       timestamptz not null default now()
 );
 
+-- ── 6. Finance Weekly ─────────────────────────────────────────
+-- Loan disbursements and default rates for Finance.
+create table if not exists finance_weekly (
+  id                        uuid primary key default gen_random_uuid(),
+  week_start                date        not null,
+  loan_disbursement_value   numeric(15,2) not null default 0,
+  loan_disbursement_trend   int         not null default 0,
+  loans_disbursed           int         not null default 0,
+  loans_disbursed_trend     int         not null default 0,
+  default_rate              numeric(5,2) not null default 0,
+  default_rate_trend        int         not null default 0,
+  recorded_at               timestamptz not null default now()
+);
+
 -- ── 6. Engineering Projects ─────────────────────────────────
 -- Individual engineering project statuses shown on the card.
 create table if not exists engineering_projects (
@@ -114,7 +128,7 @@ on conflict do nothing;
 
 -- Revenue seed (FY2026)
 insert into revenue_annual (fiscal_year, goal, current) values
-  (2026, 1000000, 750000)
+  (2026, 1000000, 780000)
 on conflict do nothing;
 
 -- Customer metrics seed (current month)
@@ -124,7 +138,7 @@ on conflict do nothing;
 
 -- Ops weekly seed (current week)
 insert into ops_weekly (week_start, weekly_goal, visits, conversations, users_converted) values
-  (date_trunc('week', current_date)::date, 10, 89, 50, 23)
+  (date_trunc('week', current_date)::date, 10, 28, 50, 12)
 on conflict do nothing;
 
 -- Pay weekly seed (current week)
@@ -132,10 +146,15 @@ insert into pay_weekly (week_start, weekly_goal, conversations, users_converted,
   (date_trunc('week', current_date)::date, 10, 28, 9, 1, 2, 5, 2)
 on conflict do nothing;
 
+-- Finance weekly seed (current week)
+insert into finance_weekly (week_start, loan_disbursement_value, loan_disbursement_trend, loans_disbursed, loans_disbursed_trend, default_rate, default_rate_trend) values
+  (date_trunc('week', current_date)::date, 2000000, 25, 15, 25, 12, 25)
+on conflict do nothing;
+
 -- Engineering projects seed
 insert into engineering_projects (name, status, date_label, date_value, sort_order) values
-  ('USD wallets & transfers',  'Live',           'Deployed', 'May 2026', 1),
-  ('Pay Partner Dashboard',    'In Development', 'Target',   'May 2026', 2)
+  ('USD wallets & transfers',  'In Development', 'Target', '1st, May 2026', 1),
+  ('Pay Partner Dashboard',    'In Development', 'Target', '1st, June 2026', 2)
 on conflict do nothing;
 
 -- Engineering health seed

@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import { Users, DollarSignIcon,TrendingUp, ChevronDown, Edit2 } from 'lucide-react';
+import { Users, CreditCard, TrendingUp, Edit2, MessageSquare } from 'lucide-react';
 
 interface OpsCardProps {
   type: 'OPS' | 'PAY';
@@ -23,8 +21,8 @@ export const OpsCard: React.FC<OpsCardProps> = ({
   onEdit,
 }) => {
   const isOps = type === 'OPS';
-  const Icon = isOps ? Users : DollarSignIcon;
-  const title = isOps ? 'Operations' : 'Tradevu Pay';
+  const Icon = isOps ? Users : CreditCard;
+  const title = isOps ? 'Sales' : 'Tradevu Pay';
   const progress = Math.min(Math.round((mainMetric.current / mainMetric.goal) * 100), 100);
 
   return (
@@ -41,40 +39,33 @@ export const OpsCard: React.FC<OpsCardProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <Icon size={18} />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOps ? 'bg-purple-50 text-purple-600' : 'bg-purple-50 text-purple-600'}`}>
+            <Icon size={20} />
           </div>
-          <span className="text-[17px] font-extrabold text-slate-800">{title}</span>
+          <span className="text-[18px] font-black text-slate-900">{title}</span>
         </div>
       </div>
 
       {/* Main metric */}
       <div className="mb-6">
-        <div className="text-[13px] font-bold text-slate-400 mb-2">{mainMetric.label}</div>
+        <div className="text-[12px] font-bold text-slate-400 mb-2 uppercase tracking-wider">{mainMetric.label}</div>
         <div className="flex items-baseline gap-2 mb-4">
           <span className="text-[32px] font-black text-slate-900 leading-none">{mainMetric.current}</span>
-          <span className="text-[20px] font-bold text-slate-300">/ {mainMetric.goal}</span>
+          <span className="text-[18px] font-bold text-slate-300">/ {mainMetric.goal}</span>
         </div>
-        <div className="progress-track h-2.5">
-          <div className="progress-fill h-full" style={{ width: `${progress}%` }} />
+        <div className="progress-track h-2 bg-slate-100">
+          <div className="progress-fill h-full bg-[#7C3AED]" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      <div className="mt-auto space-y-5 pt-2">
-
-        {/* Conversion rate */}
-        <div className='pt-4 border-t border-slate-100'>
-          <div className="text-[13px] font-bold text-slate-400 mb-1">{conversion.label}</div>
-          <div className="text-[26px] font-black text-primary">{conversion.value}%</div>
-        </div>
-
+      <div className="mt-auto space-y-6 pt-4 border-t border-slate-50">
         {/* Sub metric (Conversions for OPS) */}
         {subMetric && (
-          <div className="pt-4 border-t border-slate-100">
-            <div className="text-[13px] font-bold text-slate-400 mb-2">{subMetric.label}</div>
+          <div>
+            <div className="text-[12px] font-bold text-slate-400 mb-2 uppercase tracking-wider">{subMetric.label}</div>
             <div className="flex items-end justify-between">
               <span className="text-[28px] font-black text-slate-900 leading-none">{subMetric.value}</span>
-              <div className="flex items-center gap-1 text-[13px] font-bold text-mint-dark mb-1">
+              <div className="flex items-center gap-1 text-[12px] font-bold text-mint-dark mb-1">
                 <TrendingUp size={14} />
                 +{subMetric.trend}% vs last week
               </div>
@@ -82,21 +73,25 @@ export const OpsCard: React.FC<OpsCardProps> = ({
           </div>
         )}
 
-        
-
         {/* List metrics (LCY/FCY for PAY) */}
         {listMetrics && listMetrics.length > 0 && (
-          <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="space-y-4">
             {listMetrics.map((item) => (
-              <div key={item.label} className="flex justify-between items-center">
-                <span className="text-[15px] font-semibold text-slate-500">{item.label}</span>
-                <span className="text-[15px] font-black text-slate-800">
-                  {item.current} <span className="font-semibold text-slate-400">/ {item.goal}</span>
+              <div key={item.label} className="flex justify-between items-baseline">
+                <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
+                <span className="text-[18px] font-black text-slate-900">
+                  {item.current} <span className="text-[14px] font-bold text-slate-300">/ {item.goal}</span>
                 </span>
               </div>
             ))}
           </div>
         )}
+
+        {/* Conversion rate */}
+        <div>
+          <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">{conversion.label}</div>
+          <div className="text-[28px] font-black text-primary leading-none">{conversion.value}%</div>
+        </div>
       </div>
     </div>
   );
