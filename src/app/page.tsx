@@ -162,6 +162,12 @@ node scripts/create-tables.mjs
     );
   }
 
+  const displayDate = data?.lastUpdateTimestamp 
+    ? new Date(data.lastUpdateTimestamp).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+      }) 
+    : 'Just now';
+
   return (
     <main className="max-w-[1440px] mx-auto px-10 py-10">
       {/* ── Dashboard Header ────────────────────────────────────────── */}
