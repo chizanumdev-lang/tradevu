@@ -30,7 +30,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({
         <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
           <Landmark size={20} />
         </div>
-        <div className="section-label">Finance</div>
+        <div className="text-[18px] font-black text-slate-900">Finance</div>
       </div>
 
       <div className="space-y-6">

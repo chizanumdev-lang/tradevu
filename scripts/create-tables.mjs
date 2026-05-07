@@ -60,7 +60,7 @@ create table if not exists ops_weekly (
   recorded_at       timestamptz not null default now()
 );
 
--- ── 5. Pay Weekly ───────────────────────────────────────────
+-- ── 6. Pay Weekly ───────────────────────────────────────────
 create table if not exists pay_weekly (
   id                uuid primary key default gen_random_uuid(),
   week_start        date        not null,
@@ -74,7 +74,20 @@ create table if not exists pay_weekly (
   recorded_at       timestamptz not null default now()
 );
 
--- ── 6. Engineering Projects ─────────────────────────────────
+-- ── 7. Finance Weekly ───────────────────────────────────────
+create table if not exists finance_weekly (
+  id                        uuid primary key default gen_random_uuid(),
+  week_start                date        not null,
+  loan_disbursement_value   numeric(15,2) not null default 0,
+  loan_disbursement_trend   int         not null default 0,
+  loans_disbursed           int         not null default 0,
+  loans_disbursed_trend     int         not null default 0,
+  default_rate              numeric(5,2) not null default 0,
+  default_rate_trend        int         not null default 0,
+  recorded_at               timestamptz not null default now()
+);
+
+-- ── 8. Engineering Projects ─────────────────────────────────
 create table if not exists engineering_projects (
   id           uuid primary key default gen_random_uuid(),
   name         text        not null,
@@ -86,7 +99,7 @@ create table if not exists engineering_projects (
   updated_at   timestamptz not null default now()
 );
 
--- ── 7. Engineering Health ───────────────────────────────────
+-- ── 9. Engineering Health ───────────────────────────────────
 create table if not exists engineering_health (
   id          uuid primary key default gen_random_uuid(),
   label       text        not null,
@@ -122,6 +135,10 @@ insert into pay_weekly (week_start, weekly_goal, conversations, users_converted,
 select date_trunc('week', current_date)::date, 10, 28, 9, 1, 2, 5, 2
 where not exists (select 1 from pay_weekly limit 1);
 
+insert into finance_weekly (week_start, loan_disbursement_value, loan_disbursement_trend, loans_disbursed, loans_disbursed_trend, default_rate, default_rate_trend)
+select date_trunc('week', current_date)::date, 2000000, 25, 15, 25, 12, 25
+where not exists (select 1 from finance_weekly limit 1);
+
 insert into engineering_projects (name, status, date_label, date_value, sort_order)
 select * from (values
   ('USD wallets & transfers', 'Live',           'Deployed', 'May 2026', 1),
@@ -136,7 +153,7 @@ select * from (values
 ) as v(label, value, is_good, sort_order)
 where not exists (select 1 from engineering_health limit 1);
 
--- ── 8. Dashboard Settings ───────────────────────────────────
+-- ── 10. Dashboard Settings ──────────────────────────────────
 create table if not exists dashboard_settings (
   id            uuid primary key default gen_random_uuid(),
   scroll_speed  int not null default 8,
@@ -147,6 +164,7 @@ create table if not exists dashboard_settings (
 insert into dashboard_settings (scroll_speed, scroll_enabled)
 select 8, true
 where not exists (select 1 from dashboard_settings limit 1);
+
 `;
 
 async function run() {
