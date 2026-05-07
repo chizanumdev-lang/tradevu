@@ -7,6 +7,7 @@ import {
   ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
   DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check
 } from 'lucide-react';
+import Image from 'next/image';
 import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 
@@ -237,7 +238,10 @@ export default function AdminPage() {
       <div className="min-h-screen bg-[#F8F9FE] flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl p-12 border border-slate-100 animate-in fade-in zoom-in duration-500">
           <div className="flex justify-center mb-10">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shadow-primary/20">T</div>
+            <div className="w-20 h-20 bg-primary/5 rounded-[32px] flex items-center justify-center shadow-2xl shadow-primary/10 border border-primary/10 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Image src="/main-icon.svg" alt="Tradevu" width={48} height={48} className="relative z-10" />
+            </div>
           </div>
           
           <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tight">Admin Console</h1>
@@ -302,9 +306,11 @@ export default function AdminPage() {
       {/* ── Fixed Admin Header ────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white z-[100] px-10 flex items-center justify-between border-b border-slate-800 shadow-2xl">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary rounded flex items-center justify-center text-white font-black text-sm">T</div>
-            <span className="font-black text-sm tracking-tight uppercase">Admin Console</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+              <Image src="/white-icon.svg" alt="Tradevu" width={24} height={24} />
+            </div>
+            <span className="font-black text-lg tracking-tight uppercase">Admin Console</span>
           </div>
           
           <div className="h-6 w-px bg-slate-700" />
@@ -352,7 +358,9 @@ export default function AdminPage() {
 
         {/* ── Header ────────────────────────────────── */}
         <header className="mb-8">
-          <p className="text-[13px] font-semibold text-slate-400 mb-1">✳ Command Center View</p>
+          <p className="text-[13px] font-black text-slate-400 mb-2 flex items-center gap-2 uppercase tracking-widest">
+            <Image src="/main-icon.svg" alt="Tradevu" width={14} height={14} /> Command Center View
+          </p>
           <div className="flex justify-between items-end">
             <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
               FY&apos;26 Operating Scoreboard

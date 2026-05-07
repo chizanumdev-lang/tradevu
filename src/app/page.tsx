@@ -7,6 +7,7 @@ import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
 import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
+import Image from 'next/image';
 import { DashboardData } from '@/types/dashboard';
 
 export default function Dashboard() {
@@ -174,16 +175,16 @@ node scripts/create-tables.mjs
       <header className="mb-8 flex justify-between items-end">
         <div>
           <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-            <span className="text-primary text-[16px]">✳</span> Operating Scoreboard
+            <Image src="/main-icon.svg" alt="Tradevu" width={18} height={18} className="brightness-110" /> Operating Scoreboard
           </p>
           <h1 className="text-[42px] font-black text-slate-900 tracking-tight leading-none">
-            FY&apos;26 Mirror View
+            FY&apos;26 Operating Dashboard
           </h1>
         </div>
         
         <div className="text-right">
-          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-end gap-2">
-            ✳ Last updated
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-end gap-2 text-right">
+            <Image src="/main-icon.svg" alt="Tradevu" width={14} height={14} className="opacity-50" /> Last updated
           </p>
           <p className="text-[18px] font-black text-slate-900 uppercase">
             {displayDate}
