@@ -25,7 +25,7 @@ const AUTHORIZED_USERS: User[] = [
 
 const INITIAL_PERMISSIONS: Record<string, string[]> = {
   CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
-  PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'settings'],
+  PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
   HR: ['launch', 'users', 'settings', 'ops', 'pay'],
 };
 
@@ -70,6 +70,16 @@ export default function AdminPage() {
   const [passwordChangeForm, setPasswordChangeForm] = useState({ newPassword: '', confirmPassword: '' });
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
 
+
+  const hasPermission = (permission: string) => {
+    if (!currentUser) return false;
+    // Check user-specific permissions first
+    if (currentUser.permissions && currentUser.permissions.length > 0) {
+      return currentUser.permissions.includes(permission);
+    }
+    // Fallback to role-based permissions
+    return INITIAL_PERMISSIONS[currentUser.role]?.includes(permission) || false;
+  };
 
   const fetchDashboard = () => {
     setLoading(true);
@@ -889,7 +899,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* Dashboard Behavior Section - CEO/HR ONLY */}
-                    {(currentUser?.role === 'CEO' || currentUser?.role === 'HR') && (
+                    {hasPermission('settings') && (
                       <div className="pt-10 border-t border-slate-100 space-y-6">
                         <div className="flex items-center gap-2 mb-2">
                           <LayoutDashboard size={18} className="text-primary" />
@@ -939,7 +949,7 @@ export default function AdminPage() {
                     )}
 
                     {/* Governance Section - Only for CEO, HR, PM */}
-                    {(currentUser?.role === 'CEO' || currentUser?.role === 'HR' || currentUser?.role === 'PM') && (
+                    {hasPermission('users') && (
                       <div className="pt-10 border-t border-slate-100 space-y-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
