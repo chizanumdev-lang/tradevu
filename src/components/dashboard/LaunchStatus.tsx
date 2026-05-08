@@ -7,13 +7,15 @@ interface LaunchStatusProps {
   history?: LaunchStatusType[];
   editMode?: boolean;
   onEdit?: () => void;
+  title?: string;
 }
 
 export const LaunchStatus: React.FC<LaunchStatusProps> = ({ 
   current, 
   history = [],
   editMode,
-  onEdit
+  onEdit,
+  title = 'Launch Readiness'
 }) => {
   const allSlides = [current, ...history];
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,7 +68,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
       </div>
 
       <div key={currentIndex} className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col flex-1">
-        <h3 className="text-[24px] font-black text-slate-900 mb-6">Launch Readiness</h3>
+        <h3 className="text-[24px] font-black text-slate-900 mb-6">{title}</h3>
 
         <div className="progress-track h-2 mb-10 bg-slate-50">
           <div 

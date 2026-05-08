@@ -326,7 +326,7 @@ export async function fetchDashboardSettings(
 ) {
   const { data, error } = await supabase
     .from('dashboard_settings')
-    .select('scroll_speed, scroll_enabled, dashboard_title')
+    .select('scroll_speed, scroll_enabled, dashboard_title, launch_status_title')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
@@ -336,7 +336,8 @@ export async function fetchDashboardSettings(
     return { 
       scrollSpeed: 8, 
       scrollEnabled: true,
-      dashboardTitle: "FY'26 Operating Dashboard"
+      dashboardTitle: "FY'26 Operating Dashboard",
+      launchStatusTitle: "Launch Readiness"
     };
   }
 
@@ -344,12 +345,13 @@ export async function fetchDashboardSettings(
     scrollSpeed: data.scroll_speed,
     scrollEnabled: data.scroll_enabled,
     dashboardTitle: data.dashboard_title || "FY'26 Operating Dashboard",
+    launchStatusTitle: data.launch_status_title || "Launch Readiness",
   };
 }
 
 export async function updateDashboardSettings(
   supabase: SupabaseClient,
-  settings: { scrollSpeed: number; scrollEnabled: boolean; dashboardTitle: string }
+  settings: { scrollSpeed: number; scrollEnabled: boolean; dashboardTitle: string; launchStatusTitle: string }
 ) {
   const { error } = await supabase
     .from('dashboard_settings')
@@ -357,6 +359,7 @@ export async function updateDashboardSettings(
       scroll_speed: settings.scrollSpeed,
       scroll_enabled: settings.scrollEnabled,
       dashboard_title: settings.dashboardTitle,
+      launch_status_title: settings.launchStatusTitle,
       updated_at: new Date().toISOString(),
     });
 

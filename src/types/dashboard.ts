@@ -135,6 +135,7 @@ export interface DashboardData {
     scrollSpeed: number;
     scrollEnabled: boolean;
     dashboardTitle: string;
+    launchStatusTitle: string;
   };
   users: User[];
   lastUpdateTimestamp?: string;

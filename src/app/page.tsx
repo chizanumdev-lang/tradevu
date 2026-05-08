@@ -124,7 +124,6 @@ export default function Dashboard() {
     animationId = requestAnimationFrame(animate);
 
     return () => {
-      clearTimeout(startTimeout);
       cancelAnimationFrame(animationId);
     };
   }, [data, loading]);
@@ -245,6 +244,7 @@ node scripts/create-tables.mjs
              <LaunchStatus
               current={data.launchStatus}
               history={data.launchHistory}
+              title={data.settings.launchStatusTitle}
             />
           </div>
 
