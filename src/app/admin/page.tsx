@@ -944,6 +944,20 @@ export default function AdminPage() {
                               <span>Faster</span>
                             </div>
                           </div>
+
+                          <div className="col-span-1 md:col-span-2 space-y-4 pt-6 border-t border-slate-200">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dashboard Main Heading</label>
+                            <input 
+                              type="text"
+                              value={metrics.settings.dashboardTitle}
+                              onChange={(e) => setMetrics({...metrics, settings: {...metrics.settings, dashboardTitle: e.target.value}})}
+                              placeholder="e.g. FY'26 Operating Dashboard"
+                              className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                            />
+                            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                              This text will appear as the main title at the top of the dashboard.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}

@@ -12,7 +12,8 @@ import {
   WeeklyPay,
   WeeklyFinance,
   EngineeringData,
-  DeptTarget
+  DeptTarget,
+  User
 } from '@/types/dashboard';
 
 
@@ -325,31 +326,37 @@ export async function fetchDashboardSettings(
 ) {
   const { data, error } = await supabase
     .from('dashboard_settings')
-    .select('scroll_speed, scroll_enabled')
+    .select('scroll_speed, scroll_enabled, dashboard_title')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
 
   if (error) {
     console.warn('dashboard_settings:', error.message);
-    return { scrollSpeed: 8, scrollEnabled: true };
+    return { 
+      scrollSpeed: 8, 
+      scrollEnabled: true,
+      dashboardTitle: "FY'26 Operating Dashboard"
+    };
   }
 
   return {
     scrollSpeed: data.scroll_speed,
     scrollEnabled: data.scroll_enabled,
+    dashboardTitle: data.dashboard_title || "FY'26 Operating Dashboard",
   };
 }
 
 export async function updateDashboardSettings(
   supabase: SupabaseClient,
-  settings: { scrollSpeed: number; scrollEnabled: boolean }
+  settings: { scrollSpeed: number; scrollEnabled: boolean; dashboardTitle: string }
 ) {
   const { error } = await supabase
     .from('dashboard_settings')
     .insert({
       scroll_speed: settings.scrollSpeed,
       scroll_enabled: settings.scrollEnabled,
+      dashboard_title: settings.dashboardTitle,
       updated_at: new Date().toISOString(),
     });
 
