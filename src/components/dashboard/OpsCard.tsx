@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, CreditCard, TrendingUp, Edit2, MessageSquare } from 'lucide-react';
+import { Users, CreditCard, TrendingUp, Edit2, ShoppingCart } from 'lucide-react';
 
 interface OpsCardProps {
   type: 'OPS' | 'PAY';
@@ -21,8 +21,8 @@ export const OpsCard: React.FC<OpsCardProps> = ({
   onEdit,
 }) => {
   const isOps = type === 'OPS';
-  const Icon = isOps ? Users : CreditCard;
-  const title = isOps ? 'Sales' : 'Tradevu Pay';
+  const Icon = isOps ? ShoppingCart : CreditCard;
+  const title = isOps ? 'Tradevu sale' : 'Tradevu Pay';
   const progress = Math.min(Math.round((mainMetric.current / mainMetric.goal) * 100), 100);
 
   return (
@@ -37,12 +37,17 @@ export const OpsCard: React.FC<OpsCardProps> = ({
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOps ? 'bg-purple-50 text-purple-600' : 'bg-purple-50 text-purple-600'}`}>
-            <Icon size={20} />
-          </div>
-          <span className="text-[18px] font-black text-slate-900">{title}</span>
+      <div className="flex items-center gap-3 mb-8">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOps ? 'bg-purple-50 text-purple-600' : 'bg-purple-50 text-purple-600'}`}>
+          <Icon size={20} />
+        </div>
+        <div className="flex flex-col justify-center">
+          <span className="text-[18px] font-black text-slate-900 leading-none">{title}</span>
+          {isOps && (
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+              operations
+            </span>
+          )}
         </div>
       </div>
 
