@@ -10,6 +10,7 @@ import {
   fetchEngineering,
   fetchDashboardSettings,
   fetchLastUpdateTimestamp,
+  fetchDashboardUsers,
 } from '@/lib/queries';
 import { DashboardData } from '@/types/dashboard';
 
@@ -27,6 +28,7 @@ export async function GET() {
       engineering,
       lastUpdateTimestamp,
       settings,
+      users,
     ] = await Promise.all([
       fetchCustomerMetrics(supabase),
       fetchRevenueAnnual(supabase),
@@ -37,6 +39,7 @@ export async function GET() {
       fetchEngineering(supabase),
       fetchLastUpdateTimestamp(supabase),
       fetchDashboardSettings(supabase),
+      fetchDashboardUsers(supabase),
     ]);
 
     const payload: DashboardData = {
@@ -51,6 +54,7 @@ export async function GET() {
       engineeringRoadmap: engineering.projects,
       lastUpdateTimestamp,
       settings,
+      users,
       serverTime: new Date().toISOString(),
     };
 

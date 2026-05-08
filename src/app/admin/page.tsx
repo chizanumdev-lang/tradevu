@@ -5,7 +5,7 @@ import {
   Users, RefreshCcw, Lock, LogOut, TrendingUp, 
   Activity, Layers, CreditCard, LayoutDashboard,
   ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
-  DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check
+  DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff
 } from 'lucide-react';
 import Image from 'next/image';
 import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
@@ -18,41 +18,29 @@ import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 
 const AUTHORIZED_USERS: User[] = [
-  { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
-  { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
   { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
-  { email: 'habeeb@tradevu.co', name: 'Habeeb', role: 'ENGINEERING_LEAD', password: 'password123' },
-  { email: 'chibueze@tradevu.co', name: 'Chibueze', role: 'PAY_LEAD', password: 'password123' },
-  { email: 'adaora@tradevu.co', name: 'Adaora', role: 'OPS_LEAD', password: 'password123' },
-  { email: 'tope@tradevu.co', name: 'Tope', role: 'OPS_LEAD', password: 'password123' },
+  { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
+  { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
 ];
 
-const INITIAL_PERMISSIONS: Record<Role, string[]> = {
+const INITIAL_PERMISSIONS: Record<string, string[]> = {
   CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
   PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'settings'],
   HR: ['launch', 'users', 'settings', 'ops', 'pay'],
-  ENGINEERING_LEAD: ['engineering', 'settings'],
-  PAY_LEAD: ['pay', 'settings'],
-  OPS_LEAD: ['customers', 'ops', 'settings'],
-  GUEST: ['settings'],
 };
 
-const ROLE_LABELS: Record<Role, string> = {
+const ROLE_LABELS: Record<string, string> = {
   CEO: 'Chief Executive Officer',
   HR: 'Human Resources',
   PM: 'Project Manager',
-  ENGINEERING_LEAD: 'Director of Technical Team',
-  PAY_LEAD: 'Head of Pay Team',
-  OPS_LEAD: 'Operations Lead',
-  GUEST: 'Guest User',
 };
 
-const ALL_ROLES: Role[] = ['CEO', 'HR', 'PM', 'ENGINEERING_LEAD', 'PAY_LEAD', 'OPS_LEAD', 'GUEST'];
+const ALL_ROLES: Role[] = ['CEO', 'HR', 'PM'];
 const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'];
 
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>(AUTHORIZED_USERS);
-  const [permissions, setPermissions] = useState<Record<Role, string[]>>(INITIAL_PERMISSIONS);
+  const [permissions, setPermissions] = useState<Record<string, string[]>>(INITIAL_PERMISSIONS);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +57,18 @@ export default function AdminPage() {
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
   const [mounted, setMounted] = useState(false);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteStep, setInviteStep] = useState(1);
+  const [inviteForm, setInviteForm] = useState<{email: string, password: string, role: string, permissions: string[]}>({
+    email: '',
+    password: '',
+    role: '',
+    permissions: ['settings']
+  });
+  const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null);
+  const [passwordChangeForm, setPasswordChangeForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
 
 
   const fetchDashboard = () => {
@@ -80,6 +80,7 @@ export default function AdminPage() {
           setError(data.error);
         } else {
           setMetrics(data);
+          if (data.users) setUsers(data.users);
           setError(null);
         }
         setLoading(false);
@@ -103,11 +104,56 @@ export default function AdminPage() {
     );
     
     if (user) {
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      setLoginError(null);
+      if (user.requiresPasswordChange) {
+        setPasswordChangeUser(user);
+        setLoginError(null);
+      } else {
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        setLoginError(null);
+      }
     } else {
-      setLoginError('Invalid credentials. Please use password123.');
+      setLoginError('Invalid credentials.');
+    }
+  };
+
+  const handlePasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordChangeForm.newPassword !== passwordChangeForm.confirmPassword) {
+      setPasswordChangeError('Passwords do not match.');
+      return;
+    }
+    if (passwordChangeForm.newPassword.length < 6) {
+      setPasswordChangeError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (passwordChangeUser) {
+      const updatedUsers = users.map(u => 
+        u.email === passwordChangeUser.email 
+          ? { ...u, password: passwordChangeForm.newPassword, requiresPasswordChange: false } 
+          : u
+      );
+      
+      // Persist to DB
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: updatedUsers })
+      }).then(res => {
+        if (res.ok) {
+          setUsers(updatedUsers);
+          // Log them in after password change
+          const updatedUser = { ...passwordChangeUser, password: passwordChangeForm.newPassword, requiresPasswordChange: false };
+          setCurrentUser(updatedUser);
+          setIsLoggedIn(true);
+          setPasswordChangeUser(null);
+          setPasswordChangeForm({ newPassword: '', confirmPassword: '' });
+          setPasswordChangeError(null);
+        } else {
+          setPasswordChangeError('Failed to save new password to database.');
+        }
+      });
     }
   };
 
@@ -119,7 +165,12 @@ export default function AdminPage() {
 
   const canEdit = (section: string) => {
     if (!currentUser) return false;
-    return permissions[currentUser.role]?.includes(section);
+    // Check if user has explicit permissions assigned
+    if (currentUser.permissions) {
+      return currentUser.permissions.includes(section);
+    }
+    // Fallback to role-based permissions for legacy users
+    return permissions[currentUser.role]?.includes(section) || false;
   };
 
   const handleOpenEdit = (section: string) => {
@@ -268,13 +319,20 @@ export default function AdminPage() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   required
                   placeholder="••••••••"
                   value={loginForm.password}
                   onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
                 />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
             
@@ -289,6 +347,65 @@ export default function AdminPage() {
             </button>
           </form>
         </div>
+
+        {/* Forced Password Change Modal */}
+        {passwordChangeUser && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
+            <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl p-12 border border-slate-100 animate-in fade-in zoom-in duration-300">
+              <h2 className="text-2xl font-black text-slate-900 text-center mb-2 tracking-tight">Change Password</h2>
+              <p className="text-slate-500 text-center font-medium mb-10">This is your first time signing in. You must change your password to proceed.</p>
+              
+              <form onSubmit={handlePasswordChange} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      placeholder="••••••••"
+                      value={passwordChangeForm.newPassword}
+                      onChange={(e) => setPasswordChangeForm({...passwordChangeForm, newPassword: e.target.value})}
+                      className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      placeholder="••••••••"
+                      value={passwordChangeForm.confirmPassword}
+                      onChange={(e) => setPasswordChangeForm({...passwordChangeForm, confirmPassword: e.target.value})}
+                      className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {passwordChangeError && (
+                  <div className="p-4 bg-rose-50 text-rose-600 text-xs font-bold text-center rounded-xl animate-shake">
+                    {passwordChangeError}
+                  </div>
+                )}
+
+                <button type="submit" className="w-full py-5 bg-primary text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                  Update Password <Check size={18} />
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -752,9 +869,21 @@ export default function AdminPage() {
                       </div>
                       <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Update Password</p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <input type="password" placeholder="New Password" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
-                          <input type="password" placeholder="Confirm Password" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="relative">
+                            <input 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="New Password" 
+                              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold pr-10" 
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            >
+                              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -809,8 +938,8 @@ export default function AdminPage() {
                       </div>
                     )}
 
-                    {/* Governance Section - Only for CEO/HR */}
-                    {(currentUser?.role === 'CEO' || currentUser?.role === 'HR') && (
+                    {/* Governance Section - Only for CEO, HR, PM */}
+                    {(currentUser?.role === 'CEO' || currentUser?.role === 'HR' || currentUser?.role === 'PM') && (
                       <div className="pt-10 border-t border-slate-100 space-y-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -819,18 +948,14 @@ export default function AdminPage() {
                           </div>
                           <button 
                             onClick={() => {
-                              const newUser: User = { 
-                                name: 'New Team Member', 
-                                email: `user${users.length + 1}@tradevu.co`, 
-                                role: 'GUEST', 
-                                password: 'password123' 
-                              };
-                              setUsers([...users, newUser]);
+                              setInviteStep(1);
+                              setIsInviteModalOpen(true);
+                              setInviteForm({ email: '', password: '', role: '', permissions: ['settings'] });
                             }}
                             className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all"
                           >
                             <UserPlus size={14} />
-                            Add User
+                            Invite Member
                           </button>
                         </div>
 
@@ -887,17 +1012,35 @@ export default function AdminPage() {
                                     <p className="text-[10px] font-bold text-slate-400">{u.email}</p>
                                   </div>
                                 </div>
-                                <select 
-                                  value={u.role}
-                                  onChange={(e) => {
-                                    const updated = [...users];
-                                    updated[i].role = e.target.value as Role;
-                                    setUsers(updated);
-                                  }}
-                                  className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black uppercase"
-                                >
-                                  {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
+                                <div className="flex items-center gap-3">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight bg-slate-100 px-2 py-1 rounded-md">{u.role}</p>
+                                  {currentUser?.email !== u.email && (
+                                    <button 
+                                      onClick={() => {
+                                        if (confirm(`Are you sure you want to delete ${u.name}?`)) {
+                                          const updatedUsers = users.filter((_, index) => index !== i);
+                                          fetch('/api/users', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ users: updatedUsers })
+                                          }).then(res => {
+                                            if (res.ok) {
+                                              setUsers(updatedUsers);
+                                              setMessage({ type: 'success', text: `User ${u.name} deleted.` });
+                                            } else {
+                                              setMessage({ type: 'error', text: 'Failed to delete user from database.' });
+                                            }
+                                            setTimeout(() => setMessage(null), 3000);
+                                          });
+                                        }
+                                      }}
+                                      className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                      title="Delete User"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1042,6 +1185,150 @@ export default function AdminPage() {
                   Confirm Changes
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Member Modal */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[40px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="h-2 w-full bg-primary" />
+            <div className="p-10">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">Invite Member</h2>
+                  <p className="text-slate-500 font-medium text-sm">Step {inviteStep} of 2</p>
+                </div>
+                <button onClick={() => setIsInviteModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+
+              {inviteStep === 1 ? (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Role/Title</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Operations Lead"
+                      value={inviteForm.role}
+                      onChange={(e) => setInviteForm({...inviteForm, role: e.target.value})}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Permissions</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ALL_PERMISSIONS.map(perm => (
+                        <button
+                          key={perm}
+                          disabled={perm === 'settings'}
+                          onClick={() => {
+                            if (perm === 'settings') return;
+                            const newPerms = inviteForm.permissions.includes(perm)
+                              ? inviteForm.permissions.filter(p => p !== perm)
+                              : [...inviteForm.permissions, perm];
+                            setInviteForm({...inviteForm, permissions: newPerms});
+                          }}
+                          className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${inviteForm.permissions.includes(perm) ? 'bg-primary/5 border-primary text-primary' : 'bg-slate-50 border-slate-100 text-slate-400'} ${perm === 'settings' ? 'opacity-80' : ''}`}
+                        >
+                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${inviteForm.permissions.includes(perm) ? 'bg-primary border-primary' : 'border-slate-300'}`}>
+                            {(inviteForm.permissions.includes(perm) || perm === 'settings') && <Check size={10} className="text-white" />}
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">{perm}</span>
+                          {perm === 'settings' && <span className="text-[8px] font-black text-primary/50 ml-auto">REQUIRED</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      if (!inviteForm.role || inviteForm.permissions.length === 0) return;
+                      setInviteStep(2);
+                    }}
+                    disabled={!inviteForm.role || inviteForm.permissions.length === 0}
+                    className="w-full py-4 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] disabled:opacity-50 disabled:grayscale disabled:scale-100 transition-all"
+                  >
+                    Next Step
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="email@tradevu.co"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Temporary Password</label>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••"
+                        value={inviteForm.password}
+                        onChange={(e) => setInviteForm({...inviteForm, password: e.target.value})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pt-4 flex gap-3">
+                    <button 
+                      onClick={() => setInviteStep(1)}
+                      className="flex-1 py-4 bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-slate-100 transition-all"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (!inviteForm.email || !inviteForm.password) return;
+                        const newUser: User = { 
+                          name: inviteForm.email.split('@')[0], 
+                          email: inviteForm.email, 
+                          role: inviteForm.role, 
+                          permissions: inviteForm.permissions,
+                          password: inviteForm.password,
+                          requiresPasswordChange: true
+                        };
+                        const updatedUsers = [...users, newUser];
+                        
+                        fetch('/api/users', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ users: updatedUsers })
+                        }).then(res => {
+                          if (res.ok) {
+                            setUsers(updatedUsers);
+                            setIsInviteModalOpen(false);
+                            setMessage({ type: 'success', text: `Invitation sent to ${inviteForm.email}` });
+                          } else {
+                            setMessage({ type: 'error', text: 'Failed to save new user to database.' });
+                          }
+                          setTimeout(() => setMessage(null), 3000);
+                        });
+                      }}
+                      className="flex-2 px-6 py-4 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
+                    >
+                      Send Invitation
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

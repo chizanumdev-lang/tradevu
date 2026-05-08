@@ -167,3 +167,22 @@ on conflict do nothing;
 insert into dashboard_settings (scroll_speed, scroll_enabled) values
   (8, true)
 on conflict do nothing;
+
+-- ── 9. Dashboard Users ─────────────────────────────────────
+-- Authorized users who can access the admin console.
+create table if not exists dashboard_users (
+  email                     text primary key,
+  name                      text not null,
+  role                      text not null,
+  permissions               text[] not null default '{}',
+  password                  text not null,
+  requires_password_change  boolean not null default false,
+  created_at                timestamptz not null default now()
+);
+
+-- Seed users
+insert into dashboard_users (email, name, role, permissions, password, requires_password_change) values
+  ('nkiru@tradevu.africa', 'Nkiru', 'CEO', '{revenue,launch,customers,ops,pay,finance,engineering,users,settings}', 'password123', false),
+  ('tola@tradevu.co', 'Tola', 'HR', '{launch,users,settings,ops,pay}', 'password123', false),
+  ('kene@tradevu.co', 'Kene', 'PM', '{revenue,launch,customers,ops,pay,finance,engineering,settings}', 'password123', false)
+on conflict (email) do nothing;
