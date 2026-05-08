@@ -46,12 +46,31 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
 
       <div className="section-label mb-8 uppercase tracking-widest text-[12px] font-bold text-slate-400">Quarterly Targets</div>
 
+      {/* Circular Phase Badge & Pagination (Top Right) */}
+      <div className="absolute top-8 right-8 flex flex-col items-end gap-3">
+        <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center shadow-sm">
+          <span className="text-[14px] font-black text-slate-900">{slide.phase}</span>
+        </div>
+        
+        {/* Pagination Circles */}
+        {allSlides.length > 1 && (
+          <div className="flex gap-1.5">
+            {allSlides.map((_, i) => (
+              <div 
+                key={i} 
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? 'bg-[#7C3AED] scale-125' : 'bg-slate-200'}`} 
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       <div key={currentIndex} className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col flex-1">
-        <h3 className="text-[24px] font-black text-slate-900 mb-6">{slide.phase} targets</h3>
+        <h3 className="text-[24px] font-black text-slate-900 mb-6">Launch Readiness</h3>
 
         <div className="progress-track h-2 mb-10 bg-slate-50">
           <div 
-            className="progress-fill h-full bg-[#7C3AED] transition-all duration-1000 ease-out" 
+            className={`progress-fill h-full transition-all duration-1000 ease-out ${currentIndex === 0 ? 'bg-[#7C3AED]' : 'bg-slate-300'}`} 
             style={{ width: `${slide.progress}%` }} 
           />
         </div>
@@ -62,7 +81,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
               <span className="text-[13px] font-bold text-slate-600 w-24 uppercase tracking-tight">{dept.name}</span>
               <div className="flex-1 progress-track h-1.5 bg-slate-50">
                 <div 
-                  className="progress-fill h-full bg-[#7C3AED] transition-all duration-1000 ease-out" 
+                  className={`progress-fill h-full transition-all duration-1000 ease-out ${currentIndex === 0 ? 'bg-[#7C3AED]' : 'bg-slate-300'}`} 
                   style={{ width: `${dept.progress}%` }} 
                 />
               </div>
@@ -74,17 +93,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
         </div>
       </div>
 
-      {/* Pagination Dots */}
-      {allSlides.length > 1 && (
-        <div className="flex gap-1.5 mt-auto pt-4">
-          {allSlides.map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-1 rounded-full transition-all duration-300 ${i === currentIndex ? 'bg-[#7C3AED] w-6' : 'bg-slate-100 w-2'}`} 
-            />
-          ))}
-        </div>
-      )}
+
     </div>
   );
 };
