@@ -102,7 +102,7 @@ export interface EngineeringProject {
   title: string;
   description: string;
   name?: string; // Legacy
-  status: 'Live' | 'In Development' | 'Testing';
+  status: 'Live' | 'In Development' | 'Testing' | 'Blocked';
   dateLabel: string;
   dateValue: string;
   progress?: number;

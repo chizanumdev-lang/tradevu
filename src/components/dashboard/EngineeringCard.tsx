@@ -1,9 +1,9 @@
 import React from 'react';
-import { Terminal, CheckCircle2, Clock, Edit2 } from 'lucide-react';
+import { Terminal, CheckCircle2, Clock, Edit2, AlertCircle } from 'lucide-react';
 
 interface Project {
   title: string;
-  status: 'Live' | 'In Development' | 'Testing';
+  status: 'Live' | 'In Development' | 'Testing' | 'Blocked';
   dateLabel: string;
   dateValue: string;
 }
@@ -100,10 +100,13 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
             <div className="space-y-2">
               <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{project.title}</div>
               <div className="flex items-center gap-2 text-[14px] font-bold text-slate-900">
-                {project.status === 'Live'
-                  ? <CheckCircle2 size={16} className="text-mint-dark" />
-                  : <Clock size={16} className="text-amber-500" />
-                }
+                {project.status === 'Live' ? (
+                  <CheckCircle2 size={16} className="text-mint-dark" />
+                ) : project.status === 'Blocked' ? (
+                  <AlertCircle size={16} className="text-rose-500" />
+                ) : (
+                  <Clock size={16} className="text-amber-500" />
+                )}
                 <span>{project.status}</span>
               </div>
             </div>

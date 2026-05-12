@@ -1155,12 +1155,13 @@ export default function AdminPage() {
                                 <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
                                 <select value={p.status || 'In Development'} onChange={(e) => {
                                   const updated = [...metrics.engineering.projects];
-                                  updated[i].status = e.target.value as "Live" | "In Development" | "Testing";
+                                  updated[i].status = e.target.value as "Live" | "In Development" | "Testing" | "Blocked";
                                   setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
                                 }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1">
                                   <option value="Live">Live</option>
                                   <option value="In Development">In Development</option>
                                   <option value="Testing">Testing</option>
+                                  <option value="Blocked">Blocked</option>
                                 </select>
                               </div>
                               <div className="flex-1">
