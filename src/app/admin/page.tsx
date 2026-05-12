@@ -69,6 +69,7 @@ export default function AdminPage() {
   const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null);
   const [passwordChangeForm, setPasswordChangeForm] = useState({ newPassword: '', confirmPassword: '' });
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
+  const [editingUserEmail, setEditingUserEmail] = useState<string | null>(null);
 
 
   const hasPermission = (permission: string) => {
@@ -78,7 +79,7 @@ export default function AdminPage() {
       return currentUser.permissions.includes(permission);
     }
     // Fallback to role-based permissions
-    return INITIAL_PERMISSIONS[currentUser.role]?.includes(permission) || false;
+    return permissions[currentUser.role]?.includes(permission) || false;
   };
 
   const fetchDashboard = () => {
@@ -174,13 +175,7 @@ export default function AdminPage() {
   };
 
   const canEdit = (section: string) => {
-    if (!currentUser) return false;
-    // Check if user has explicit permissions assigned
-    if (currentUser.permissions) {
-      return currentUser.permissions.includes(section);
-    }
-    // Fallback to role-based permissions for legacy users
-    return permissions[currentUser.role]?.includes(section) || false;
+    return hasPermission(section);
   };
 
   const handleOpenEdit = (section: string) => {
@@ -989,6 +984,7 @@ export default function AdminPage() {
                           <button 
                             onClick={() => {
                               setInviteStep(1);
+                              setEditingUserEmail(null);
                               setIsInviteModalOpen(true);
                               setInviteForm({ email: '', password: '', role: '', permissions: ['settings'] });
                             }}
@@ -1054,32 +1050,51 @@ export default function AdminPage() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight bg-slate-100 px-2 py-1 rounded-md">{u.role}</p>
-                                  {currentUser?.email !== u.email && (
+                                  <div className="flex items-center gap-1">
                                     <button 
                                       onClick={() => {
-                                        if (confirm(`Are you sure you want to delete ${u.name}?`)) {
-                                          const updatedUsers = users.filter((_, index) => index !== i);
-                                          fetch('/api/users', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ users: updatedUsers })
-                                          }).then(res => {
-                                            if (res.ok) {
-                                              setUsers(updatedUsers);
-                                              setMessage({ type: 'success', text: `User ${u.name} deleted.` });
-                                            } else {
-                                              setMessage({ type: 'error', text: 'Failed to delete user from database.' });
-                                            }
-                                            setTimeout(() => setMessage(null), 3000);
-                                          });
-                                        }
+                                        setEditingUserEmail(u.email);
+                                        setInviteForm({
+                                          email: u.email,
+                                          password: '', // Password not editable here for security
+                                          role: u.role,
+                                          permissions: (u.permissions && u.permissions.length > 0) ? u.permissions : (permissions[u.role] || ['settings'])
+                                        });
+                                        setInviteStep(1);
+                                        setIsInviteModalOpen(true);
                                       }}
-                                      className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                      title="Delete User"
+                                      className="p-2 text-slate-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                      title="Edit Permissions"
                                     >
-                                      <Trash2 size={14} />
+                                      <Edit3 size={14} />
                                     </button>
-                                  )}
+                                    {currentUser?.email !== u.email && (
+                                      <button 
+                                        onClick={() => {
+                                          if (confirm(`Are you sure you want to delete ${u.name}?`)) {
+                                            const updatedUsers = users.filter((_, index) => index !== i);
+                                            fetch('/api/users', {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ users: updatedUsers })
+                                            }).then(res => {
+                                              if (res.ok) {
+                                                setUsers(updatedUsers);
+                                                setMessage({ type: 'success', text: `User ${u.name} deleted.` });
+                                              } else {
+                                                setMessage({ type: 'error', text: 'Failed to delete user from database.' });
+                                              }
+                                              setTimeout(() => setMessage(null), 3000);
+                                            });
+                                          }
+                                        }}
+                                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                        title="Delete User"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -1238,8 +1253,8 @@ export default function AdminPage() {
             <div className="p-10">
               <div className="flex justify-between items-start mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">Invite Member</h2>
-                  <p className="text-slate-500 font-medium text-sm">Step {inviteStep} of 2</p>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase">{editingUserEmail ? 'Edit Member' : 'Invite Member'}</h2>
+                  <p className="text-slate-500 font-medium text-sm">Step {inviteStep} of {editingUserEmail ? '1' : '2'}</p>
                 </div>
                 <button onClick={() => setIsInviteModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <X size={20} className="text-slate-400" />
@@ -1285,17 +1300,45 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      if (!inviteForm.role || inviteForm.permissions.length === 0) return;
-                      setInviteStep(2);
-                    }}
-                    disabled={!inviteForm.role || inviteForm.permissions.length === 0}
-                    className="w-full py-4 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] disabled:opacity-50 disabled:grayscale disabled:scale-100 transition-all"
-                  >
-                    Next Step
-                  </button>
-                </div>
+                    <button 
+                      onClick={() => {
+                        if (!inviteForm.role || inviteForm.permissions.length === 0) return;
+                        if (editingUserEmail) {
+                          // Save changes for existing user
+                          const updatedUsers = users.map(u => 
+                            u.email === editingUserEmail 
+                              ? { ...u, role: inviteForm.role, permissions: inviteForm.permissions }
+                              : u
+                          );
+                          
+                          fetch('/api/users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ users: updatedUsers })
+                          }).then(res => {
+                            if (res.ok) {
+                              setUsers(updatedUsers);
+                              if (currentUser && currentUser.email === editingUserEmail) {
+                                const updatedSelf = updatedUsers.find(u => u.email === editingUserEmail);
+                                if (updatedSelf) setCurrentUser(updatedSelf);
+                              }
+                              setIsInviteModalOpen(false);
+                              setMessage({ type: 'success', text: `User ${editingUserEmail} updated.` });
+                            } else {
+                              setMessage({ type: 'error', text: 'Failed to update user in database.' });
+                            }
+                            setTimeout(() => setMessage(null), 3000);
+                          });
+                        } else {
+                          setInviteStep(2);
+                        }
+                      }}
+                      disabled={!inviteForm.role || inviteForm.permissions.length === 0}
+                      className="w-full py-4 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] disabled:opacity-50 disabled:grayscale disabled:scale-100 transition-all"
+                    >
+                      {editingUserEmail ? 'Save Changes' : 'Next Step'}
+                    </button>
+                  </div>
               ) : (
                 <div className="space-y-6">
                   <div className="space-y-2">
