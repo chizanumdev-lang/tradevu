@@ -3,8 +3,10 @@ export type Role = 'CEO' | 'HR' | 'PM' | 'ENGINEERING_LEAD' | 'PAY_LEAD' | 'OPS_
 export interface User {
   email: string;
   name: string;
-  role: Role;
+  role: string;
+  permissions?: string[];
   password?: string;
+  requiresPasswordChange?: boolean;
 }
 
 // ─── Customer Metrics ─────────────────────────────────────────────────────────
@@ -132,7 +134,10 @@ export interface DashboardData {
   settings: {
     scrollSpeed: number;
     scrollEnabled: boolean;
+    dashboardTitle: string;
+    launchStatusTitle: string;
   };
+  users: User[];
   lastUpdateTimestamp?: string;
   serverTime?: string;
 }

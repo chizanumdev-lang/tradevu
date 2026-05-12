@@ -8,6 +8,11 @@ const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700
 export const metadata: Metadata = {
   title: "Tradevu Dashboard | Real-time Metrics",
   description: "Enterprise-grade performance monitoring and launch readiness dashboard.",
+  icons: {
+    icon: '/main-icon.svg',
+    shortcut: '/main-icon.svg',
+    apple: '/main-icon.svg',
+  },
 };
 
 export default function RootLayout({

@@ -93,7 +93,7 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
       {/* Project statuses */}
       <div
         ref={scrollRef}
-        className="space-y-6 flex-1 max-h-[160px] overflow-y-auto no-scrollbar"
+        className="space-y-6 flex-1 max-h-[240px] overflow-y-auto no-scrollbar"
       >
         {projects.map((project, idx) => (
           <div key={idx} className="flex justify-between items-start pt-4 border-t border-slate-50 first:border-t-0 first:pt-0">

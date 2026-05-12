@@ -7,6 +7,7 @@ import { CustomerCard } from '@/components/dashboard/CustomerCard';
 import { OpsCard } from '@/components/dashboard/OpsCard';
 import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
+import Image from 'next/image';
 import { DashboardData } from '@/types/dashboard';
 
 export default function Dashboard() {
@@ -14,6 +15,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [timeOffset, setTimeOffset] = useState<number>(0);
   const [liveTime, setLiveTime] = useState<Date | null>(null);
+  const lastActivityRef = React.useRef(Date.now());
+
+  // Track user activity
+  useEffect(() => {
+    const handleActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('mousedown', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('mousedown', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, []);
 
   // Derive last updated date for the small text
   const currentDate = data?.lastUpdateTimestamp 
@@ -68,6 +89,15 @@ export default function Dashboard() {
     let currentY = window.scrollY;
 
     const animate = (time: number) => {
+      const timeSinceActivity = Date.now() - lastActivityRef.current;
+      
+      // Only scroll if inactive for 30 seconds
+      if (timeSinceActivity < 30000) {
+        lastTime = time; // keep lastTime updated so there's no jump when it starts
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+
       if (!lastTime) {
         lastTime = time;
         animationId = requestAnimationFrame(animate);
@@ -81,22 +111,19 @@ export default function Dashboard() {
 
       if (maxScroll <= 10) return;
 
-      currentY += data.settings.scrollSpeed * delta; // Dynamic speed from settings
+      currentY += data.settings.scrollSpeed * delta; 
 
       if (currentY >= maxScroll) {
-        currentY = 0; // Immediate reset to top for a constant loop
+        currentY = 0; 
       }
 
       window.scrollTo(0, currentY);
       animationId = requestAnimationFrame(animate);
     };
 
-    const startTimeout = setTimeout(() => {
-      animationId = requestAnimationFrame(animate);
-    }, 3000);
+    animationId = requestAnimationFrame(animate);
 
     return () => {
-      clearTimeout(startTimeout);
       cancelAnimationFrame(animationId);
     };
   }, [data, loading]);
@@ -112,9 +139,9 @@ export default function Dashboard() {
       timeZone: 'Africa/Lagos'
     }).format(liveTime));
 
-    if (lagosHour < 12) return 'Good morning';
-    if (lagosHour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (lagosHour < 12) return '☀️ Good morning team';
+    if (lagosHour < 17) return '🌤️ Good afternoon team';
+    return '🌙 Good evening team';
   }, [liveTime]);
 
 
@@ -164,7 +191,7 @@ node scripts/create-tables.mjs
 
   const displayDate = data?.lastUpdateTimestamp 
     ? new Date(data.lastUpdateTimestamp).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+        month: 'long', day: 'numeric', year: 'numeric'
       }) 
     : 'Just now';
 
@@ -173,17 +200,17 @@ node scripts/create-tables.mjs
       {/* ── Dashboard Header ────────────────────────────────────────── */}
       <header className="mb-8 flex justify-between items-end">
         <div>
-          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-            <span className="text-primary text-[16px]">✳</span> Operating Scoreboard
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+            {greeting}
           </p>
           <h1 className="text-[42px] font-black text-slate-900 tracking-tight leading-none">
-            FY&apos;26 Mirror View
+            {data.settings.dashboardTitle}
           </h1>
         </div>
         
         <div className="text-right">
-          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-end gap-2">
-            ✳ Last updated
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-end gap-2 text-right">
+            <Image src="/main-icon.svg" alt="Tradevu" width={14} height={14} className="opacity-50" /> Last updated
           </p>
           <p className="text-[18px] font-black text-slate-900 uppercase">
             {displayDate}
@@ -217,6 +244,7 @@ node scripts/create-tables.mjs
              <LaunchStatus
               current={data.launchStatus}
               history={data.launchHistory}
+              title={data.settings.launchStatusTitle}
             />
           </div>
 

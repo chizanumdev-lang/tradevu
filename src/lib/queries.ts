@@ -12,7 +12,8 @@ import {
   WeeklyPay,
   WeeklyFinance,
   EngineeringData,
-  DeptTarget
+  DeptTarget,
+  User
 } from '@/types/dashboard';
 
 
@@ -325,31 +326,40 @@ export async function fetchDashboardSettings(
 ) {
   const { data, error } = await supabase
     .from('dashboard_settings')
-    .select('scroll_speed, scroll_enabled')
+    .select('scroll_speed, scroll_enabled, dashboard_title, launch_status_title')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
 
   if (error) {
     console.warn('dashboard_settings:', error.message);
-    return { scrollSpeed: 8, scrollEnabled: true };
+    return { 
+      scrollSpeed: 8, 
+      scrollEnabled: true,
+      dashboardTitle: "FY'26 Operating Dashboard",
+      launchStatusTitle: "Launch Readiness"
+    };
   }
 
   return {
     scrollSpeed: data.scroll_speed,
     scrollEnabled: data.scroll_enabled,
+    dashboardTitle: data.dashboard_title || "FY'26 Operating Dashboard",
+    launchStatusTitle: data.launch_status_title || "Launch Readiness",
   };
 }
 
 export async function updateDashboardSettings(
   supabase: SupabaseClient,
-  settings: { scrollSpeed: number; scrollEnabled: boolean }
+  settings: { scrollSpeed: number; scrollEnabled: boolean; dashboardTitle: string; launchStatusTitle: string }
 ) {
   const { error } = await supabase
     .from('dashboard_settings')
     .insert({
       scroll_speed: settings.scrollSpeed,
       scroll_enabled: settings.scrollEnabled,
+      dashboard_title: settings.dashboardTitle,
+      launch_status_title: settings.launchStatusTitle,
       updated_at: new Date().toISOString(),
     });
 
@@ -390,4 +400,71 @@ export async function fetchLastUpdateTimestamp(
     return new Date(Math.max(...dates)).toISOString();
   }
   return undefined;
+}
+
+// ─── 9. Dashboard Users ───────────────────────────────────────
+export async function fetchDashboardUsers(
+  supabase: SupabaseClient
+): Promise<User[]> {
+  const { data, error } = await supabase
+    .from('dashboard_users')
+    .select('email, name, role, permissions, password, requires_password_change')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('dashboard_users:', error.message);
+    // Return hardcoded defaults if table doesn't exist yet
+    return [
+      { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
+      { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
+      { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
+    ];
+  }
+
+  const users = (data ?? []).map(u => ({
+    email: u.email,
+    name: u.name,
+    role: u.role,
+    permissions: u.permissions,
+    password: u.password,
+    requiresPasswordChange: u.requires_password_change
+  }));
+
+  return users.length > 0 ? users : [
+    { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
+    { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
+    { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
+  ];
+}
+
+export async function updateDashboardUsers(
+  supabase: SupabaseClient,
+  users: User[]
+) {
+  // Clear all and re-insert for simple synchronization in this dashboard context
+  // Alternatively, use upsert/delete logic.
+  
+  // First, get all current emails to know what to delete
+  const { data: currentUsers } = await supabase.from('dashboard_users').select('email');
+  const currentEmails = (currentUsers ?? []).map(u => u.email);
+  const newEmails = users.map(u => u.email);
+  
+  const toDelete = currentEmails.filter(e => !newEmails.includes(e));
+  
+  if (toDelete.length > 0) {
+    await supabase.from('dashboard_users').delete().in('email', toDelete);
+  }
+
+  const { error } = await supabase
+    .from('dashboard_users')
+    .upsert(users.map(u => ({
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      permissions: u.permissions || [],
+      password: u.password,
+      requires_password_change: u.requiresPasswordChange || false,
+    })));
+
+  if (error) throw new Error(`dashboard_users: ${error.message}`);
 }
