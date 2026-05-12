@@ -158,11 +158,13 @@ create table if not exists dashboard_settings (
   id            uuid primary key default gen_random_uuid(),
   scroll_speed  int not null default 8,
   scroll_enabled boolean not null default true,
+  dashboard_title text not null default 'FY''26 Operating Dashboard',
+  launch_status_title text not null default 'Launch Readiness',
   updated_at    timestamptz not null default now()
 );
 
-insert into dashboard_settings (scroll_speed, scroll_enabled)
-select 8, true
+insert into dashboard_settings (scroll_speed, scroll_enabled, dashboard_title, launch_status_title)
+select 8, true, 'FY''26 Operating Dashboard', 'Launch Readiness'
 where not exists (select 1 from dashboard_settings limit 1);
 
 `;

@@ -258,7 +258,9 @@ export default function AdminPage() {
         res = await fetch('/api/settings', {
           method: 'POST', headers, body: JSON.stringify({
             scrollSpeed: metrics.settings.scrollSpeed,
-            scrollEnabled: metrics.settings.scrollEnabled
+            scrollEnabled: metrics.settings.scrollEnabled,
+            dashboardTitle: metrics.settings.dashboardTitle,
+            launchStatusTitle: metrics.settings.launchStatusTitle
           })
         });
       }
