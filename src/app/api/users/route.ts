@@ -4,10 +4,18 @@ import { updateDashboardUsers } from '@/lib/queries';
 
 export async function POST(req: Request) {
   try {
-    const { users } = await req.json();
+    const { users, user, updatePermissions } = await req.json();
     const supabase = await createClient();
     
-    await updateDashboardUsers(supabase, users);
+    if (updatePermissions) {
+      const { updateUserPermissions } = await import('@/lib/queries');
+      await updateUserPermissions(supabase, updatePermissions.email, updatePermissions.role, updatePermissions.permissions);
+    } else if (user) {
+      const { upsertSingleUser } = await import('@/lib/queries');
+      await upsertSingleUser(supabase, user);
+    } else if (users) {
+      await updateDashboardUsers(supabase, users);
+    }
     
     return NextResponse.json({ success: true });
   } catch (err) {

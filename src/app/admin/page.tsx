@@ -146,16 +146,17 @@ export default function AdminPage() {
           : u
       );
       
+      const updatedUser = { ...passwordChangeUser, password: passwordChangeForm.newPassword, requiresPasswordChange: false };
+      
       // Persist to DB
       fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ users: updatedUsers })
+        body: JSON.stringify({ user: updatedUser })
       }).then(res => {
         if (res.ok) {
           setUsers(updatedUsers);
           // Log them in after password change
-          const updatedUser = { ...passwordChangeUser, password: passwordChangeForm.newPassword, requiresPasswordChange: false };
           setCurrentUser(updatedUser);
           setIsLoggedIn(true);
           setPasswordChangeUser(null);
@@ -1314,7 +1315,13 @@ export default function AdminPage() {
                           fetch('/api/users', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ users: updatedUsers })
+                            body: JSON.stringify({ 
+                              updatePermissions: {
+                                email: editingUserEmail,
+                                role: inviteForm.role,
+                                permissions: inviteForm.permissions
+                              }
+                            })
                           }).then(res => {
                             if (res.ok) {
                               setUsers(updatedUsers);
@@ -1393,7 +1400,7 @@ export default function AdminPage() {
                         fetch('/api/users', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ users: updatedUsers })
+                          body: JSON.stringify({ user: newUser })
                         }).then(res => {
                           if (res.ok) {
                             setUsers(updatedUsers);

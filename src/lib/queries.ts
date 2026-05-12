@@ -468,3 +468,38 @@ export async function updateDashboardUsers(
 
   if (error) throw new Error(`dashboard_users: ${error.message}`);
 }
+
+export async function upsertSingleUser(
+  supabase: SupabaseClient,
+  user: User
+) {
+  const { error } = await supabase
+    .from('dashboard_users')
+    .upsert({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      permissions: user.permissions || [],
+      password: user.password,
+      requires_password_change: user.requiresPasswordChange ?? false,
+    }, { onConflict: 'email' });
+
+  if (error) throw new Error(`dashboard_users_single: ${error.message}`);
+}
+
+export async function updateUserPermissions(
+  supabase: SupabaseClient,
+  email: string,
+  role: string,
+  permissions: string[]
+) {
+  const { error } = await supabase
+    .from('dashboard_users')
+    .update({
+      role: role,
+      permissions: permissions
+    })
+    .eq('email', email);
+
+  if (error) throw new Error(`update_user_permissions: ${error.message}`);
+}
