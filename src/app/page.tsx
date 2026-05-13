@@ -49,16 +49,119 @@ export default function Dashboard() {
     : 'Loading...';
 
   const fetchDashboard = () => {
-    fetch(`/api/dashboard?t=${Date.now()}`)
-      .then(res => res.json())
-      .then(d => { 
-        if (d.serverTime) {
-          const serverMs = new Date(d.serverTime).getTime();
-          const localMs = new Date().getTime();
-          setTimeOffset(serverMs - localMs);
+    const query = `
+      query GetDashboard {
+        dashboard {
+          customersMonthly {
+            current
+            goal
+            activeMonthly
+            percentageChange
+          }
+          revenueAnnual {
+            goal
+            current
+            percentage
+          }
+          launchStatus {
+            phase
+            progress
+            deptTargets {
+              name
+              progress
+            }
+            label
+          }
+          launchHistory {
+            phase
+            progress
+            deptTargets {
+              name
+              progress
+            }
+            label
+          }
+          opsWeekly {
+            weeklyGoal
+            visits
+            conversations
+            usersConverted
+            conversionRate
+            activePilots
+          }
+          payWeekly {
+            weeklyGoal
+            conversations
+            usersConverted
+            conversionRate
+            transfers {
+              label
+              current
+              value
+              goal
+            }
+          }
+          financeWeekly {
+            loanDisbursementValue
+            loanDisbursementTrend
+            loansDisbursed
+            loansDisbursedTrend
+            defaultRate
+            defaultRateTrend
+          }
+          engineering {
+            projects {
+              id
+              title
+              description
+              status
+              dateLabel
+              dateValue
+            }
+            health {
+              label
+              value
+              isGood
+            }
+          }
+          settings {
+            scrollSpeed
+            scrollEnabled
+            dashboardTitle
+            launchStatusTitle
+          }
+          users {
+            email
+            name
+            role
+            permissions
+            requiresPasswordChange
+          }
+          lastUpdateTimestamp
+          serverTime
         }
-        setData(d); 
-        setLoading(false); 
+      }
+    `;
+
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    })
+      .then(res => res.json())
+      .then(({ data, errors }) => {
+        if (errors) {
+          console.error(errors);
+        } else {
+          const d = data.dashboard;
+          if (d.serverTime) {
+            const serverMs = new Date(d.serverTime).getTime();
+            const localMs = new Date().getTime();
+            setTimeOffset(serverMs - localMs);
+          }
+          setData(d);
+        }
+        setLoading(false);
       })
       .catch(() => setLoading(false));
   };

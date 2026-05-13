@@ -84,14 +84,113 @@ export default function AdminPage() {
 
   const fetchDashboard = () => {
     setLoading(true);
-    fetch('/api/dashboard')
+    const query = `
+      query GetDashboard {
+        dashboard {
+          customersMonthly {
+            current
+            goal
+            activeMonthly
+            percentageChange
+          }
+          revenueAnnual {
+            goal
+            current
+            percentage
+          }
+          launchStatus {
+            phase
+            progress
+            deptTargets {
+              name
+              progress
+            }
+            label
+          }
+          launchHistory {
+            phase
+            progress
+            deptTargets {
+              name
+              progress
+            }
+            label
+          }
+          opsWeekly {
+            weeklyGoal
+            visits
+            conversations
+            usersConverted
+            conversionRate
+            activePilots
+          }
+          payWeekly {
+            weeklyGoal
+            conversations
+            usersConverted
+            conversionRate
+            transfers {
+              label
+              current
+              value
+              goal
+            }
+          }
+          financeWeekly {
+            loanDisbursementValue
+            loanDisbursementTrend
+            loansDisbursed
+            loansDisbursedTrend
+            defaultRate
+            defaultRateTrend
+          }
+          engineering {
+            projects {
+              id
+              title
+              description
+              status
+              dateLabel
+              dateValue
+            }
+            health {
+              label
+              value
+              isGood
+            }
+          }
+          settings {
+            scrollSpeed
+            scrollEnabled
+            dashboardTitle
+            launchStatusTitle
+          }
+          users {
+            email
+            name
+            role
+            permissions
+            requiresPasswordChange
+          }
+          lastUpdateTimestamp
+          serverTime
+        }
+      }
+    `;
+
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    })
       .then(res => res.json())
-      .then(data => {
-        if ('error' in data) {
-          setError(data.error);
+      .then(({ data, errors }) => {
+        if (errors) {
+          setError(errors[0].message);
         } else {
-          setMetrics(data);
-          if (data.users) setUsers(data.users);
+          const dashboard = data.dashboard;
+          setMetrics(dashboard);
+          if (dashboard.users) setUsers(dashboard.users);
           setError(null);
         }
         setLoading(false);
@@ -149,12 +248,26 @@ export default function AdminPage() {
       const updatedUser = { ...passwordChangeUser, password: passwordChangeForm.newPassword, requiresPasswordChange: false };
       
       // Persist to DB
-      fetch('/api/users', {
+      const query = `
+        mutation UpsertUser($user: UserInput!) {
+          upsertUser(user: $user) {
+            email
+            name
+            role
+            permissions
+            requiresPasswordChange
+          }
+        }
+      `;
+      const variables = { user: updatedUser };
+
+      fetch('/api/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: updatedUser })
-      }).then(res => {
-        if (res.ok) {
+        body: JSON.stringify({ query, variables })
+      }).then(res => res.json())
+      .then(({ data, errors }) => {
+        if (!errors) {
           setUsers(updatedUsers);
           // Log them in after password change
           setCurrentUser(updatedUser);
@@ -163,7 +276,7 @@ export default function AdminPage() {
           setPasswordChangeForm({ newPassword: '', confirmPassword: '' });
           setPasswordChangeError(null);
         } else {
-          setPasswordChangeError('Failed to save new password to database.');
+          setPasswordChangeError(errors[0].message || 'Failed to save new password to database.');
         }
       });
     }
@@ -189,81 +302,148 @@ export default function AdminPage() {
     setSavingSection(editingSection);
     try {
       const headers = { 'Content-Type': 'application/json' };
-      let res;
-      if (editingSection === 'revenue') {
-        res = await fetch('/api/metrics/revenue/annual', {
-          method: 'POST', headers, body: JSON.stringify({ goal: metrics.revenueAnnual.goal, current: metrics.revenueAnnual.current })
-        });
-      } else if (editingSection === 'customers') {
-        res = await fetch('/api/metrics/customers/monthly', {
-          method: 'POST', headers, body: JSON.stringify({
-            totalCustomers: metrics.customersMonthly.current,
-            monthlyGoal: metrics.customersMonthly.goal,
-            activeMonthly: metrics.customersMonthly.activeMonthly
-          })
-        });
-      } else if (editingSection === 'ops') {
-        res = await fetch('/api/ops/weekly', {
-          method: 'POST', headers, body: JSON.stringify({
-            weeklyGoal: metrics.opsWeekly.weeklyGoal,
-            visits: metrics.opsWeekly.visits,
-            conversations: metrics.opsWeekly.conversations,
-            usersConverted: metrics.opsWeekly.usersConverted || 0
-          })
-        });
-      } else if (editingSection === 'pay') {
-        res = await fetch('/api/pay/weekly', {
-          method: 'POST', headers, body: JSON.stringify({
-            weeklyGoal: metrics.payWeekly.weeklyGoal,
-            conversations: metrics.payWeekly.conversations,
-            usersConverted: metrics.payWeekly.usersConverted || 0,
-            lcyTransfers: metrics.payWeekly.transfers[0]?.current || 0,
-            lcyGoal: metrics.payWeekly.transfers[0]?.goal || 0,
-            fcyTransfers: metrics.payWeekly.transfers[1]?.current || 0,
-            fcyGoal: metrics.payWeekly.transfers[1]?.goal || 0
-          })
-        });
-      } else if (editingSection === 'launch') {
-        const phases = [
-          { phase: metrics.launchStatus.phase, label: metrics.launchStatus.label || 'Current', deptTargets: metrics.launchStatus.deptTargets },
-          ...(metrics.launchHistory || []).map(h => ({ phase: h.phase, label: h.label, deptTargets: h.deptTargets }))
-        ];
-        res = await fetch('/api/launch/status', {
-          method: 'POST', headers, body: JSON.stringify({ phases })
-        });
+      let query = '';
+      let variables = {};
 
+      if (editingSection === 'revenue') {
+        query = `
+          mutation UpdateRevenue($goal: Float!, $current: Float!) {
+            updateRevenue(goal: $goal, current: $current) {
+              goal
+              current
+              percentage
+            }
+          }
+        `;
+        variables = { goal: metrics.revenueAnnual.goal, current: metrics.revenueAnnual.current };
+      } else if (editingSection === 'customers') {
+        query = `
+          mutation UpdateCustomers($totalCustomers: Int!, $monthlyGoal: Int!, $activeMonthly: Int!) {
+            updateCustomers(totalCustomers: $totalCustomers, monthlyGoal: $monthlyGoal, activeMonthly: $activeMonthly) {
+              current
+              goal
+              activeMonthly
+            }
+          }
+        `;
+        variables = {
+          totalCustomers: metrics.customersMonthly.current,
+          monthlyGoal: metrics.customersMonthly.goal,
+          activeMonthly: metrics.customersMonthly.activeMonthly
+        };
+      } else if (editingSection === 'ops') {
+        query = `
+          mutation UpdateOps($weeklyGoal: Int!, $visits: Int!, $conversations: Int!, $usersConverted: Int!) {
+            updateOps(weeklyGoal: $weeklyGoal, visits: $visits, conversations: $conversations, usersConverted: $usersConverted) {
+              weeklyGoal
+              visits
+              conversations
+              usersConverted
+            }
+          }
+        `;
+        variables = {
+          weeklyGoal: metrics.opsWeekly.weeklyGoal,
+          visits: metrics.opsWeekly.visits,
+          conversations: metrics.opsWeekly.conversations,
+          usersConverted: metrics.opsWeekly.usersConverted || 0
+        };
+      } else if (editingSection === 'pay') {
+        query = `
+          mutation UpdatePay($weeklyGoal: Int!, $conversations: Int!, $usersConverted: Int!, $lcyTransfers: Float!, $lcyGoal: Float!, $fcyTransfers: Float!, $fcyGoal: Float!) {
+            updatePay(weeklyGoal: $weeklyGoal, conversations: $conversations, usersConverted: $usersConverted, lcyTransfers: $lcyTransfers, lcyGoal: $lcyGoal, fcyTransfers: $fcyTransfers, fcyGoal: $fcyGoal) {
+              weeklyGoal
+            }
+          }
+        `;
+        variables = {
+          weeklyGoal: metrics.payWeekly.weeklyGoal,
+          conversations: metrics.payWeekly.conversations,
+          usersConverted: metrics.payWeekly.usersConverted || 0,
+          lcyTransfers: metrics.payWeekly.transfers[0]?.current || 0,
+          lcyGoal: metrics.payWeekly.transfers[0]?.goal || 0,
+          fcyTransfers: metrics.payWeekly.transfers[1]?.current || 0,
+          fcyGoal: metrics.payWeekly.transfers[1]?.goal || 0
+        };
+      } else if (editingSection === 'launch') {
+        query = `
+          mutation UpdateLaunchStatus($phases: [LaunchPhaseInput!]!) {
+            updateLaunchStatus(phases: $phases) {
+              phase
+            }
+          }
+        `;
+        variables = {
+          phases: [
+            { phase: metrics.launchStatus.phase, label: metrics.launchStatus.label || 'Current', deptTargets: metrics.launchStatus.deptTargets },
+            ...(metrics.launchHistory || []).map(h => ({ phase: h.phase, label: h.label, deptTargets: h.deptTargets }))
+          ]
+        };
       } else if (editingSection === 'finance') {
-        res = await fetch('/api/finance/weekly', {
-          method: 'POST', headers, body: JSON.stringify({
-            loanDisbursementValue: metrics.financeWeekly.loanDisbursementValue,
-            loanDisbursementTrend: metrics.financeWeekly.loanDisbursementTrend,
-            loansDisbursed: metrics.financeWeekly.loansDisbursed,
-            loansDisbursedTrend: metrics.financeWeekly.loansDisbursedTrend,
-            defaultRate: metrics.financeWeekly.defaultRate,
-            defaultRateTrend: metrics.financeWeekly.defaultRateTrend
-          })
-        });
+        query = `
+          mutation UpdateFinance($loanDisbursementValue: Float!, $loanDisbursementTrend: Float!, $loansDisbursed: Int!, $loansDisbursedTrend: Float!, $defaultRate: Float!, $defaultRateTrend: Float!) {
+            updateFinance(loanDisbursementValue: $loanDisbursementValue, loanDisbursementTrend: $loanDisbursementTrend, loansDisbursed: $loansDisbursed, loansDisbursedTrend: $loansDisbursedTrend, defaultRate: $defaultRate, defaultRateTrend: $defaultRateTrend) {
+              loanDisbursementValue
+            }
+          }
+        `;
+        variables = {
+          loanDisbursementValue: metrics.financeWeekly.loanDisbursementValue,
+          loanDisbursementTrend: metrics.financeWeekly.loanDisbursementTrend,
+          loansDisbursed: metrics.financeWeekly.loansDisbursed,
+          loansDisbursedTrend: metrics.financeWeekly.loansDisbursedTrend,
+          defaultRate: metrics.financeWeekly.defaultRate,
+          defaultRateTrend: metrics.financeWeekly.defaultRateTrend
+        };
       } else if (editingSection === 'engineering') {
-        res = await fetch('/api/engineering/milestone', {
-          method: 'POST', headers, body: JSON.stringify({
-            projects: metrics.engineering.projects,
-            health: metrics.engineering.health
-          })
-        });
+        query = `
+          mutation UpdateEngineering($projects: [EngineeringProjectInput!]!, $health: [EngineeringHealthMetricInput!]!) {
+            updateEngineering(projects: $projects, health: $health) {
+              projects { id }
+            }
+          }
+        `;
+        variables = {
+          projects: metrics.engineering.projects.map(p => ({
+            id: p.id,
+            title: p.title,
+            description: p.description || '',
+            status: p.status,
+            dateLabel: p.dateLabel,
+            dateValue: p.dateValue
+          })),
+          health: metrics.engineering.health.map(h => ({
+            label: h.label,
+            value: h.value,
+            isGood: h.isGood
+          }))
+        };
       } else if (editingSection === 'settings') {
-        res = await fetch('/api/settings', {
-          method: 'POST', headers, body: JSON.stringify({
-            scrollSpeed: metrics.settings.scrollSpeed,
-            scrollEnabled: metrics.settings.scrollEnabled,
-            dashboardTitle: metrics.settings.dashboardTitle,
-            launchStatusTitle: metrics.settings.launchStatusTitle
-          })
-        });
+        query = `
+          mutation UpdateSettings($scrollSpeed: Int!, $scrollEnabled: Boolean!, $dashboardTitle: String, $launchStatusTitle: String) {
+            updateSettings(scrollSpeed: $scrollSpeed, scrollEnabled: $scrollEnabled, dashboardTitle: $dashboardTitle, launchStatusTitle: $launchStatusTitle) {
+              scrollSpeed
+            }
+          }
+        `;
+        variables = {
+          scrollSpeed: metrics.settings.scrollSpeed,
+          scrollEnabled: metrics.settings.scrollEnabled,
+          dashboardTitle: metrics.settings.dashboardTitle,
+          launchStatusTitle: metrics.settings.launchStatusTitle
+        };
       }
+
+      const res = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables })
+      });
       
-      if (res && !res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to save');
+      const result = await res.json();
+      
+      if (result.errors) {
+        throw new Error(result.errors[0].message || 'Failed to save');
       }
 
       setMessage({ type: 'success', text: `${editingSection.toUpperCase()} updated successfully.` });
@@ -1074,16 +1254,24 @@ export default function AdminPage() {
                                         onClick={() => {
                                           if (confirm(`Are you sure you want to delete ${u.name}?`)) {
                                             const updatedUsers = users.filter((_, index) => index !== i);
-                                            fetch('/api/users', {
+                                            const query = `
+                                              mutation DeleteUser($email: String!) {
+                                                deleteUser(email: $email)
+                                              }
+                                            `;
+                                            const variables = { email: u.email };
+
+                                            fetch('/api/graphql', {
                                               method: 'POST',
                                               headers: { 'Content-Type': 'application/json' },
-                                              body: JSON.stringify({ users: updatedUsers })
-                                            }).then(res => {
-                                              if (res.ok) {
+                                              body: JSON.stringify({ query, variables })
+                                            }).then(res => res.json())
+                                            .then(({ data, errors }) => {
+                                              if (!errors) {
                                                 setUsers(updatedUsers);
                                                 setMessage({ type: 'success', text: `User ${u.name} deleted.` });
                                               } else {
-                                                setMessage({ type: 'error', text: 'Failed to delete user from database.' });
+                                                setMessage({ type: 'error', text: errors[0].message || 'Failed to delete user from database.' });
                                               }
                                               setTimeout(() => setMessage(null), 3000);
                                             });
@@ -1313,18 +1501,28 @@ export default function AdminPage() {
                               : u
                           );
                           
-                          fetch('/api/users', {
+                          const query = `
+                            mutation UpdateUserPermissions($email: String!, $role: String!, $permissions: [String!]!) {
+                              updateUserPermissions(email: $email, role: $role, permissions: $permissions) {
+                                email
+                                role
+                                permissions
+                              }
+                            }
+                          `;
+                          const variables = {
+                            email: editingUserEmail,
+                            role: inviteForm.role,
+                            permissions: inviteForm.permissions
+                          };
+                          
+                          fetch('/api/graphql', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                              updatePermissions: {
-                                email: editingUserEmail,
-                                role: inviteForm.role,
-                                permissions: inviteForm.permissions
-                              }
-                            })
-                          }).then(res => {
-                            if (res.ok) {
+                            body: JSON.stringify({ query, variables })
+                          }).then(res => res.json())
+                          .then(({ data, errors }) => {
+                            if (!errors) {
                               setUsers(updatedUsers);
                               if (currentUser && currentUser.email === editingUserEmail) {
                                 const updatedSelf = updatedUsers.find(u => u.email === editingUserEmail);
@@ -1333,7 +1531,7 @@ export default function AdminPage() {
                               setIsInviteModalOpen(false);
                               setMessage({ type: 'success', text: `User ${editingUserEmail} updated.` });
                             } else {
-                              setMessage({ type: 'error', text: 'Failed to update user in database.' });
+                              setMessage({ type: 'error', text: errors[0].message || 'Failed to update user in database.' });
                             }
                             setTimeout(() => setMessage(null), 3000);
                           });
@@ -1398,17 +1596,31 @@ export default function AdminPage() {
                         };
                         const updatedUsers = [...users, newUser];
                         
-                        fetch('/api/users', {
+                        const query = `
+                          mutation UpsertUser($user: UserInput!) {
+                            upsertUser(user: $user) {
+                              email
+                              name
+                              role
+                              permissions
+                              requiresPasswordChange
+                            }
+                          }
+                        `;
+                        const variables = { user: newUser };
+
+                        fetch('/api/graphql', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ user: newUser })
-                        }).then(res => {
-                          if (res.ok) {
+                          body: JSON.stringify({ query, variables })
+                        }).then(res => res.json())
+                        .then(({ data, errors }) => {
+                          if (!errors) {
                             setUsers(updatedUsers);
                             setIsInviteModalOpen(false);
                             setMessage({ type: 'success', text: `Invitation sent to ${inviteForm.email}` });
                           } else {
-                            setMessage({ type: 'error', text: 'Failed to save new user to database.' });
+                            setMessage({ type: 'error', text: errors[0].message || 'Failed to save new user to database.' });
                           }
                           setTimeout(() => setMessage(null), 3000);
                         });
