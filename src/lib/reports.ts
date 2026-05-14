@@ -1,0 +1,71 @@
+import { createClient } from '@/utils/supabase/server';
+import { SupabaseClient } from '@supabase/supabase-js';
+
+export async function generateReport(module: 'all' | 'finance' | 'sales' | 'pay' | 'engineering' | 'customers' | 'revenue' | 'launch') {
+  const supabase = await createClient();
+
+  const reportData: Record<string, any> = {
+    generatedAt: new Date().toISOString(),
+    module
+  };
+
+  if (module === 'all' || module === 'finance') {
+    const { data: metrics } = await supabase.from('finance_metrics').select('*').order('recorded_at', { ascending: false });
+    
+    // Calculate historical totals
+    let totalUsd = 0;
+    const periodTotals: Record<string, number> = {};
+
+    if (metrics) {
+      metrics.forEach((m: any) => {
+        // Use historical rate for reporting, falling back to 1 if missing
+        const rate = m.historical_rate_to_usd || 1;
+        const valUsd = m.loan_value * rate;
+        
+        totalUsd += valUsd;
+        periodTotals[m.period] = (periodTotals[m.period] || 0) + valUsd;
+      });
+    }
+
+    reportData.finance = {
+      rawMetrics: metrics,
+      calculatedTotalsUsd: {
+        total: totalUsd,
+        byPeriod: periodTotals
+      }
+    };
+  }
+
+  if (module === 'all' || module === 'sales') {
+    const { data: sales } = await supabase.from('sales_marketing').select('*').order('recorded_at', { ascending: false });
+    reportData.sales = sales;
+  }
+
+  if (module === 'all' || module === 'pay') {
+    const { data: pay } = await supabase.from('pay_metrics').select('*').order('recorded_at', { ascending: false });
+    reportData.pay = pay;
+  }
+
+  if (module === 'all' || module === 'engineering') {
+    const { data: projects } = await supabase.from('engineering_projects').select('*');
+    const { data: health } = await supabase.from('engineering_health').select('*');
+    reportData.engineering = { projects, health };
+  }
+
+  if (module === 'all' || module === 'customers') {
+    const { data: customers } = await supabase.from('customers_monthly').select('*');
+    reportData.customers = customers;
+  }
+
+  if (module === 'all' || module === 'revenue') {
+    const { data: revenue } = await supabase.from('revenue_annual').select('*');
+    reportData.revenue = revenue;
+  }
+
+  if (module === 'all' || module === 'launch') {
+    const { data: launch } = await supabase.from('launch_readiness').select('*');
+    reportData.launch = launch;
+  }
+
+  return reportData;
+}

@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { CustomerCard } from '@/components/dashboard/CustomerCard';
-import { OpsCard } from '@/components/dashboard/OpsCard';
+import { SalesCard } from '@/components/dashboard/SalesCard';
+import { PayCard } from '@/components/dashboard/PayCard';
 import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 import Image from 'next/image';
@@ -81,33 +82,37 @@ export default function Dashboard() {
             }
             label
           }
-          opsWeekly {
-            weeklyGoal
-            visits
-            conversations
-            usersConverted
-            conversionRate
-            activePilots
+          salesMarketing {
+            touchpoint
+            period
+            leadsGenerated
+            conversions
           }
-          payWeekly {
-            weeklyGoal
-            conversations
-            usersConverted
-            conversionRate
-            transfers {
-              label
-              current
-              value
-              goal
+          pay {
+            metrics {
+              period
+              weeklyGoal
+              conversations
+              usersConverted
+              lcyTransfers
+              lcyGoal
+              fcyTransfers
+              fcyGoal
             }
           }
-          financeWeekly {
-            loanDisbursementValue
-            loanDisbursementTrend
-            loansDisbursed
-            loansDisbursedTrend
-            defaultRate
-            defaultRateTrend
+          finance {
+            metrics {
+              loanType
+              currency
+              period
+              loanValue
+              loanCount
+              defaultRate
+            }
+            exchangeRates {
+              currency
+              rateToUsd
+            }
           }
           engineering {
             projects {
@@ -164,6 +169,25 @@ export default function Dashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      const response = await fetch('/api/reports?module=all');
+      const d = await response.json();
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tradevu-report-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Failed to download report', error);
+      alert('Failed to download report');
+    }
   };
 
   // Run initial fetch and setup polling
@@ -354,43 +378,17 @@ node scripts/create-tables.mjs
 
           {/* ── Bottom Row (4 cards, each 3 cols) ── */}
           <div className="col-span-12 md:col-span-3">
-            <OpsCard
-              type="OPS"
-              mainMetric={{
-                label: 'Visits',
-                current: data.opsWeekly.visits,
-                goal: data.opsWeekly.weeklyGoal,
-              }}
-              subMetric={{
-                label: 'Conversions',
-                value: data.opsWeekly.usersConverted,
-                trend: 25, // Mock trend for now
-              }}
-              conversion={{
-                label: 'Conversion Rate',
-                value: data.opsWeekly.conversionRate,
-              }}
+            <SalesCard
+              metrics={data.salesMarketing}
             />
           </div>
 
           <div className="col-span-12 md:col-span-3">
-            <OpsCard
-              type="PAY"
-              mainMetric={{
-                label: 'Conversations',
-                current: data.payWeekly.conversations,
-                goal: data.payWeekly.weeklyGoal,
-              }}
-              conversion={{
-                label: 'Conversation → Conversion Rate',
-                value: data.payWeekly.conversionRate,
-              }}
-              listMetrics={data.payWeekly.transfers}
-            />
+            <PayCard data={data.pay} />
           </div>
 
           <div className="col-span-12 md:col-span-3">
-            <FinanceCard data={data.financeWeekly} />
+            <FinanceCard data={data.finance} />
           </div>
 
           <div className="col-span-12 md:col-span-3">

@@ -7,13 +7,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import {
   CustomerMetrics,
   RevenueMetrics,
-  LaunchStatus,
-  WeeklyOps,
-  WeeklyPay,
-  WeeklyFinance,
+  SalesMarketingMetric,
+  PayData,
+  PayMetric,
+  FinanceData,
+  FinanceMetric,
+  ExchangeRate,
   EngineeringData,
   DeptTarget,
-  User
+  LaunchStatus,
+  User,
+  DashboardSettings
 } from '@/types/dashboard';
 
 
@@ -29,38 +33,51 @@ function toPercent(numerator: number, denominator: number): number {
 export async function fetchCustomerMetrics(
   supabase: SupabaseClient
 ): Promise<CustomerMetrics> {
-  // Latest two months, so we can compute MoM change
-  const { data, error } = await supabase
+  // 1. Fetch live total count from customers table
+  const { count: totalCount, error: totalError } = await supabase
+    .from('customers')
+    .select('*', { count: 'exact', head: true });
+
+  if (totalError) console.warn('customers total count:', totalError.message);
+
+  // 2. Fetch monthly active users (logged in within last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const { count: activeCount, error: activeError } = await supabase
+    .from('customers')
+    .select('*', { count: 'exact', head: true })
+    .gt('last_logged_in', thirtyDaysAgo.toISOString());
+
+  if (activeError) console.warn('customers active count:', activeError.message);
+
+  // 3. Fetch historical goals and snapshots from customer_metrics
+  const { data: metricsData, error: metricsError } = await supabase
     .from('customer_metrics')
     .select('total_customers, monthly_goal, active_monthly, period_start')
     .order('period_start', { ascending: false })
     .order('recorded_at', { ascending: false })
     .limit(2);
 
-  if (error) {
-    console.warn('customer_metrics:', error.message);
-    return {
-      current: 342,
-      goal: 500,
-      activeMonthly: 100,
-      percentageChange: 12,
-    };
-  }
+  if (metricsError) console.warn('customer_metrics:', metricsError.message);
 
-  const current = data?.[0];
-  const previous = data?.[1];
+  const currentSnapshot = metricsData?.[0];
+  const previousSnapshot = metricsData?.[1];
 
-  const currentCount = current?.total_customers ?? 0;
-  const previousCount = previous?.total_customers ?? 0;
+  // Use live data if available, fallback to snapshots
+  const currentTotal = totalCount ?? currentSnapshot?.total_customers ?? 342;
+  const currentActive = activeCount ?? currentSnapshot?.active_monthly ?? 100;
+  const previousTotal = previousSnapshot?.total_customers ?? currentTotal;
+  
   const percentageChange =
-    previousCount > 0
-      ? Math.round(((currentCount - previousCount) / previousCount) * 100)
+    previousTotal > 0
+      ? Math.round(((currentTotal - previousTotal) / previousTotal) * 100)
       : 0;
 
   return {
-    current: currentCount,
-    goal: current?.monthly_goal ?? 500,
-    activeMonthly: current?.active_monthly ?? 0,
+    current: currentTotal,
+    goal: currentSnapshot?.monthly_goal ?? 500,
+    activeMonthly: currentActive,
     percentageChange,
   };
 }
@@ -150,123 +167,197 @@ export async function fetchLaunchStatus(
     history: allQuarters.slice(1)
   };
 }
-
-
-// ─── 4. Ops weekly ────────────────────────────────────────────────────────────
-export async function fetchOpsWeekly(
+export async function fetchSalesMarketing(
   supabase: SupabaseClient
-): Promise<WeeklyOps> {
+): Promise<SalesMarketingMetric[]> {
   const { data, error } = await supabase
-    .from('ops_weekly')
-    .select(
-      'weekly_goal, visits, conversations, users_converted, week_start, recorded_at'
-    )
-    .order('week_start', { ascending: false })
-    .order('recorded_at', { ascending: false })
-    .limit(1)
-    .single();
+    .from('sales_marketing')
+    .select('touchpoint, period, leads_generated, conversions')
+    .order('recorded_at', { ascending: false });
 
   if (error) {
-    console.warn('ops_weekly:', error.message);
-    return {
-      weeklyGoal: 10,
-      visits: 89,
-      conversations: 50,
-      usersConverted: 23,
-      conversionRate: 26,
-      activePilots: 0,
-    };
+    console.warn('sales_marketing:', error.message);
+    return [
+      { touchpoint: 'LinkedIn', period: 'week', leadsGenerated: 45, conversions: 12 },
+      { touchpoint: 'Website', period: 'week', leadsGenerated: 89, conversions: 24 },
+      { touchpoint: 'X', period: 'week', leadsGenerated: 22, conversions: 5 },
+      { touchpoint: 'LinkedIn', period: 'month', leadsGenerated: 180, conversions: 48 },
+      { touchpoint: 'Website', period: 'month', leadsGenerated: 350, conversions: 96 },
+      { touchpoint: 'X', period: 'month', leadsGenerated: 100, conversions: 25 },
+    ];
   }
 
-  const conversionRate = toPercent(data.users_converted, data.visits);
+  const latestMap = new Map<string, any>();
+  for (const m of (data || [])) {
+    const key = `${m.touchpoint}_${m.period}`;
+    if (!latestMap.has(key)) latestMap.set(key, m);
+  }
+
+  return Array.from(latestMap.values()).map(m => ({
+    touchpoint: m.touchpoint as any,
+    period: m.period as any,
+    leadsGenerated: m.leads_generated,
+    conversions: m.conversions
+  }));
+}
+
+export async function updateSalesMarketing(
+  supabase: SupabaseClient,
+  metrics: SalesMarketingMetric[]
+) {
+  await supabase.from('sales_marketing').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { error } = await supabase
+    .from('sales_marketing')
+    .insert(metrics.map(m => ({
+      touchpoint: m.touchpoint,
+      period: m.period,
+      leads_generated: m.leadsGenerated,
+      conversions: m.conversions
+    })));
+  if (error) throw error;
+  return true;
+}
+
+// ─── 5. Pay ───────────────────────────────────────────────────────────────
+export async function fetchPay(
+  supabase: SupabaseClient
+): Promise<PayData> {
+  const { data, error } = await supabase
+    .from('pay_metrics')
+    .select('*')
+    .order('recorded_at', { ascending: false });
+
+  if (error) {
+    console.warn('pay_metrics:', error.message);
+    return { metrics: [] };
+  }
+
+  const latestMap = new Map<string, any>();
+  for (const m of (data || [])) {
+    if (!latestMap.has(m.period)) latestMap.set(m.period, m);
+  }
 
   return {
-    weeklyGoal: data.weekly_goal,
-    visits: data.visits,
-    conversations: data.conversations,
-    usersConverted: data.users_converted,
-    conversionRate,
-    activePilots: (data as any).active_pilots || 0,
+    metrics: Array.from(latestMap.values()).map(m => ({
+      period: m.period as any,
+      weeklyGoal: m.weekly_goal,
+      conversations: m.conversations,
+      usersConverted: m.users_converted,
+      lcyTransfers: m.lcy_transfers,
+      lcyGoal: m.lcy_goal,
+      fcyTransfers: m.fcy_transfers,
+      fcyGoal: m.fcy_goal
+    }))
   };
 }
 
-// ─── 5. Pay weekly ────────────────────────────────────────────────────────────
-export async function fetchPayWeekly(
-  supabase: SupabaseClient
-): Promise<WeeklyPay> {
-  const { data, error } = await supabase
-    .from('pay_weekly')
-    .select(
-      'weekly_goal, conversations, users_converted, lcy_transfers, lcy_goal, fcy_transfers, fcy_goal, week_start, recorded_at'
-    )
-    .order('week_start', { ascending: false })
-    .order('recorded_at', { ascending: false })
-    .limit(1)
-    .single();
+export async function updatePay(
+  supabase: SupabaseClient,
+  metrics: PayMetric[]
+) {
+  // Clear and re-insert for simplicity
+  await supabase.from('pay_metrics').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-  if (error) {
-    console.warn('pay_weekly:', error.message);
-    return {
-      weeklyGoal: 10,
-      conversations: 28,
-      usersConverted: 9,
-      conversionRate: 32,
-      transfers: [
-        { label: 'LCY transfers', current: 1, value: 1, goal: 2 },
-        { label: 'FCY transfers', current: 5, value: 5, goal: 2 },
-      ],
+  const { error } = await supabase
+    .from('pay_metrics')
+    .insert(metrics.map(m => ({
+      period: m.period,
+      weekly_goal: m.weeklyGoal,
+      conversations: m.conversations,
+      users_converted: m.usersConverted,
+      lcy_transfers: m.lcyTransfers,
+      lcy_goal: m.lcyGoal,
+      fcy_transfers: m.fcyTransfers,
+      fcy_goal: m.fcyGoal
+    })));
+
+  if (error) throw error;
+  return true;
+}
+
+// ─── 6. Finance ───────────────────────────────────────────────────────────────
+export async function fetchFinance(
+  supabase: SupabaseClient
+): Promise<FinanceData> {
+  const [metricsRes, ratesRes] = await Promise.all([
+    supabase
+      .from('finance_metrics')
+      .select('loan_type, currency, period, loan_value, loan_count, default_rate')
+      .order('recorded_at', { ascending: false }),
+    supabase
+      .from('exchange_rates')
+      .select('currency, rate_to_usd')
+  ]);
+
+  if (metricsRes.error || ratesRes.error) {
+    console.warn('finance:', metricsRes.error?.message || ratesRes.error?.message);
+    // Return empty but consistent structure
+    return { 
+      metrics: [], 
+      exchangeRates: [
+        { currency: 'USD', rateToUsd: 1.0 },
+        { currency: 'NGN', rateToUsd: 0.00065 },
+        { currency: 'USDT', rateToUsd: 1.0 },
+        { currency: 'USDC', rateToUsd: 1.0 }
+      ] 
     };
   }
 
-  const conversionRate = toPercent(data.users_converted, data.conversations);
+  const latestMap = new Map<string, any>();
+  for (const m of (metricsRes.data || [])) {
+    const key = `${m.loan_type}_${m.currency}_${m.period}`;
+    if (!latestMap.has(key)) latestMap.set(key, m);
+  }
 
   return {
-    weeklyGoal: data.weekly_goal,
-    conversations: data.conversations,
-    usersConverted: data.users_converted,
-    conversionRate,
-    transfers: [
-      { label: 'LCY transfers', current: data.lcy_transfers, value: data.lcy_transfers, goal: data.lcy_goal },
-      { label: 'FCY transfers', current: data.fcy_transfers, value: data.fcy_transfers, goal: data.fcy_goal },
-    ],
+    metrics: Array.from(latestMap.values()).map(m => ({
+      loanType: m.loan_type as any,
+      currency: m.currency as any,
+      period: m.period as any,
+      loanValue: m.loan_value,
+      loanCount: m.loan_count,
+      defaultRate: m.default_rate
+    })),
+    exchangeRates: (ratesRes.data || []).map(r => ({
+      currency: r.currency as any,
+      rateToUsd: r.rate_to_usd
+    }))
   };
 }
 
-// ─── 6. Finance weekly ────────────────────────────────────────────────────────
-export async function fetchFinanceWeekly(
-  supabase: SupabaseClient
-): Promise<WeeklyFinance> {
-  const { data, error } = await supabase
-    .from('finance_weekly')
-    .select(
-      'loan_disbursement_value, loan_disbursement_trend, loans_disbursed, loans_disbursed_trend, default_rate, default_rate_trend, week_start, recorded_at'
-    )
-    .order('week_start', { ascending: false })
-    .order('recorded_at', { ascending: false })
-    .limit(1)
-    .single();
+export async function updateFinance(
+  supabase: SupabaseClient,
+  metrics: FinanceMetric[],
+  exchangeRates: ExchangeRate[]
+) {
+  // Clear and re-insert metrics for simplicity
+  await supabase.from('finance_metrics').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  
+  const { error: mError } = await supabase
+    .from('finance_metrics')
+    .insert(metrics.map(m => ({
+      loan_type: m.loanType,
+      currency: m.currency,
+      period: m.period,
+      loan_value: m.loanValue,
+      loan_count: m.loanCount,
+      default_rate: m.defaultRate,
+      historical_rate_to_usd: exchangeRates.find(r => r.currency === m.currency)?.rateToUsd || 1
+    })));
 
-  if (error) {
-    // Return defaults if table doesn't exist or no data
-    console.warn('finance_weekly:', error.message);
-    return {
-      loanDisbursementValue: 2000000,
-      loanDisbursementTrend: 25,
-      loansDisbursed: 15,
-      loansDisbursedTrend: 25,
-      defaultRate: 12,
-      defaultRateTrend: 25,
-    };
-  }
+  if (mError) throw mError;
 
-  return {
-    loanDisbursementValue: Number(data.loan_disbursement_value),
-    loanDisbursementTrend: data.loan_disbursement_trend,
-    loansDisbursed: data.loans_disbursed,
-    loansDisbursedTrend: data.loans_disbursed_trend,
-    defaultRate: Number(data.default_rate),
-    defaultRateTrend: data.default_rate_trend,
-  };
+  const { error: rError } = await supabase
+    .from('exchange_rates')
+    .upsert(exchangeRates.map(r => ({
+      currency: r.currency,
+      rate_to_usd: r.rateToUsd,
+      updated_at: new Date().toISOString()
+    })), { onConflict: 'currency' });
+
+  if (rError) throw rError;
+
+  return true;
 }
 
 // ─── 7. Engineering ───────────────────────────────────────────────────────────
@@ -323,10 +414,10 @@ export async function fetchEngineering(
 // ─── 7. Dashboard Settings ────────────────────────────────────────────────────
 export async function fetchDashboardSettings(
   supabase: SupabaseClient
-) {
+): Promise<DashboardSettings> {
   const { data, error } = await supabase
     .from('dashboard_settings')
-    .select('scroll_speed, scroll_enabled, dashboard_title, launch_status_title')
+    .select('scroll_speed, scroll_enabled, dashboard_title, launch_status_title, departments')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
@@ -337,21 +428,23 @@ export async function fetchDashboardSettings(
       scrollSpeed: 8, 
       scrollEnabled: true,
       dashboardTitle: "FY'26 Operating Dashboard",
-      launchStatusTitle: "Launch Readiness"
+      launchStatusTitle: "Launch Readiness",
+      departments: []
     };
   }
 
   return {
     scrollSpeed: data.scroll_speed,
     scrollEnabled: data.scroll_enabled,
-    dashboardTitle: data.dashboard_title || "FY'26 Operating Dashboard",
-    launchStatusTitle: data.launch_status_title || "Launch Readiness",
+    dashboardTitle: data.dashboard_title,
+    launchStatusTitle: data.launch_status_title,
+    departments: data.departments || []
   };
 }
 
 export async function updateDashboardSettings(
   supabase: SupabaseClient,
-  settings: { scrollSpeed: number; scrollEnabled: boolean; dashboardTitle: string; launchStatusTitle: string }
+  settings: Partial<DashboardSettings>
 ) {
   const { error } = await supabase
     .from('dashboard_settings')
@@ -360,6 +453,7 @@ export async function updateDashboardSettings(
       scroll_enabled: settings.scrollEnabled,
       dashboard_title: settings.dashboardTitle,
       launch_status_title: settings.launchStatusTitle,
+      departments: settings.departments,
       updated_at: new Date().toISOString(),
     });
 
@@ -371,9 +465,9 @@ export async function fetchLastUpdateTimestamp(
   supabase: SupabaseClient
 ): Promise<string | undefined> {
   const [ops, pay, finance, customers, revenue, launch, engProjects, engHealth, settings] = await Promise.all([
-    supabase.from('ops_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('sales_marketing').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('pay_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
-    supabase.from('finance_weekly').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
+    supabase.from('finance_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('customer_metrics').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('revenue_annual').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),
     supabase.from('launch_readiness').select('recorded_at').order('recorded_at', { ascending: false }).limit(1),

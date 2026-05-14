@@ -5,7 +5,7 @@ import {
   Users, RefreshCcw, Lock, LogOut, TrendingUp, 
   Activity, Layers, CreditCard, LayoutDashboard,
   ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
-  DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff
+  DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, Landmark
 } from 'lucide-react';
 import Image from 'next/image';
 import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
@@ -13,7 +13,8 @@ import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
 import { CustomerCard } from '@/components/dashboard/CustomerCard';
-import { OpsCard } from '@/components/dashboard/OpsCard';
+import { SalesCard } from '@/components/dashboard/SalesCard';
+import { PayCard } from '@/components/dashboard/PayCard';
 import { FinanceCard } from '@/components/dashboard/FinanceCard';
 import { EngineeringCard } from '@/components/dashboard/EngineeringCard';
 
@@ -24,19 +25,21 @@ const AUTHORIZED_USERS: User[] = [
 ];
 
 const INITIAL_PERMISSIONS: Record<string, string[]> = {
-  CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
+  CEO: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings', 'marketing'],
   PM: ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'],
   HR: ['launch', 'users', 'settings', 'ops', 'pay'],
+  MARKETING: ['marketing'],
 };
 
 const ROLE_LABELS: Record<string, string> = {
   CEO: 'Chief Executive Officer',
   HR: 'Human Resources',
   PM: 'Project Manager',
+  MARKETING: 'Marketing Lead',
 };
 
-const ALL_ROLES: Role[] = ['CEO', 'HR', 'PM'];
-const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings'];
+const ALL_ROLES: (Role | 'MARKETING')[] = ['CEO', 'HR', 'PM', 'MARKETING'];
+const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings', 'marketing'];
 
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>(AUTHORIZED_USERS);
@@ -53,6 +56,7 @@ export default function AdminPage() {
   const [editMode, setEditMode] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDept, setEditingDept] = useState<string | null>(null);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -116,33 +120,37 @@ export default function AdminPage() {
             }
             label
           }
-          opsWeekly {
-            weeklyGoal
-            visits
-            conversations
-            usersConverted
-            conversionRate
-            activePilots
+          salesMarketing {
+            touchpoint
+            period
+            leadsGenerated
+            conversions
           }
-          payWeekly {
-            weeklyGoal
-            conversations
-            usersConverted
-            conversionRate
-            transfers {
-              label
-              current
-              value
-              goal
+          pay {
+            metrics {
+              period
+              weeklyGoal
+              conversations
+              usersConverted
+              lcyTransfers
+              lcyGoal
+              fcyTransfers
+              fcyGoal
             }
           }
-          financeWeekly {
-            loanDisbursementValue
-            loanDisbursementTrend
-            loansDisbursed
-            loansDisbursedTrend
-            defaultRate
-            defaultRateTrend
+          finance {
+            metrics {
+              loanType
+              currency
+              period
+              loanValue
+              loanCount
+              defaultRate
+            }
+            exchangeRates {
+              currency
+              rateToUsd
+            }
           }
           engineering {
             projects {
@@ -164,12 +172,17 @@ export default function AdminPage() {
             scrollEnabled
             dashboardTitle
             launchStatusTitle
+            departments {
+              name
+              headEmail
+            }
           }
           users {
             email
             name
             role
             permissions
+            password
             requiresPasswordChange
           }
           lastUpdateTimestamp
@@ -292,8 +305,9 @@ export default function AdminPage() {
     return hasPermission(section);
   };
 
-  const handleOpenEdit = (section: string) => {
+  const handleOpenEdit = (section: string, dept?: string) => {
     setEditingSection(section);
+    setEditingDept(dept || null);
     setIsModalOpen(true);
   };
 
@@ -331,39 +345,44 @@ export default function AdminPage() {
           monthlyGoal: metrics.customersMonthly.goal,
           activeMonthly: metrics.customersMonthly.activeMonthly
         };
-      } else if (editingSection === 'ops') {
+      } else if (editingSection === 'sales') {
         query = `
-          mutation UpdateOps($weeklyGoal: Int!, $visits: Int!, $conversations: Int!, $usersConverted: Int!) {
-            updateOps(weeklyGoal: $weeklyGoal, visits: $visits, conversations: $conversations, usersConverted: $usersConverted) {
-              weeklyGoal
-              visits
-              conversations
-              usersConverted
+          mutation UpdateSales($metrics: [SalesMarketingInput!]!) {
+            updateSales(metrics: $metrics) {
+              touchpoint
+              period
+              leadsGenerated
+              conversions
             }
           }
         `;
         variables = {
-          weeklyGoal: metrics.opsWeekly.weeklyGoal,
-          visits: metrics.opsWeekly.visits,
-          conversations: metrics.opsWeekly.conversations,
-          usersConverted: metrics.opsWeekly.usersConverted || 0
+          metrics: metrics.salesMarketing.map(m => ({
+            touchpoint: m.touchpoint,
+            period: m.period,
+            leadsGenerated: m.leadsGenerated,
+            conversions: m.conversions
+          }))
         };
       } else if (editingSection === 'pay') {
         query = `
-          mutation UpdatePay($weeklyGoal: Int!, $conversations: Int!, $usersConverted: Int!, $lcyTransfers: Float!, $lcyGoal: Float!, $fcyTransfers: Float!, $fcyGoal: Float!) {
-            updatePay(weeklyGoal: $weeklyGoal, conversations: $conversations, usersConverted: $usersConverted, lcyTransfers: $lcyTransfers, lcyGoal: $lcyGoal, fcyTransfers: $fcyTransfers, fcyGoal: $fcyGoal) {
-              weeklyGoal
+          mutation UpdatePay($metrics: [PayInput!]!) {
+            updatePay(metrics: $metrics) {
+              metrics { period }
             }
           }
         `;
         variables = {
-          weeklyGoal: metrics.payWeekly.weeklyGoal,
-          conversations: metrics.payWeekly.conversations,
-          usersConverted: metrics.payWeekly.usersConverted || 0,
-          lcyTransfers: metrics.payWeekly.transfers[0]?.current || 0,
-          lcyGoal: metrics.payWeekly.transfers[0]?.goal || 0,
-          fcyTransfers: metrics.payWeekly.transfers[1]?.current || 0,
-          fcyGoal: metrics.payWeekly.transfers[1]?.goal || 0
+          metrics: metrics.pay.metrics.map(m => ({
+            period: m.period,
+            weeklyGoal: m.weeklyGoal,
+            conversations: m.conversations,
+            usersConverted: m.usersConverted || 0,
+            lcyTransfers: m.lcyTransfers || 0,
+            lcyGoal: m.lcyGoal || 0,
+            fcyTransfers: m.fcyTransfers || 0,
+            fcyGoal: m.fcyGoal || 0
+          }))
         };
       } else if (editingSection === 'launch') {
         query = `
@@ -381,19 +400,25 @@ export default function AdminPage() {
         };
       } else if (editingSection === 'finance') {
         query = `
-          mutation UpdateFinance($loanDisbursementValue: Float!, $loanDisbursementTrend: Float!, $loansDisbursed: Int!, $loansDisbursedTrend: Float!, $defaultRate: Float!, $defaultRateTrend: Float!) {
-            updateFinance(loanDisbursementValue: $loanDisbursementValue, loanDisbursementTrend: $loanDisbursementTrend, loansDisbursed: $loansDisbursed, loansDisbursedTrend: $loansDisbursedTrend, defaultRate: $defaultRate, defaultRateTrend: $defaultRateTrend) {
-              loanDisbursementValue
+          mutation UpdateFinance($metrics: [FinanceMetricInput!]!, $exchangeRates: [ExchangeRateInput!]!) {
+            updateFinance(metrics: $metrics, exchangeRates: $exchangeRates) {
+              metrics { loanType }
             }
           }
         `;
         variables = {
-          loanDisbursementValue: metrics.financeWeekly.loanDisbursementValue,
-          loanDisbursementTrend: metrics.financeWeekly.loanDisbursementTrend,
-          loansDisbursed: metrics.financeWeekly.loansDisbursed,
-          loansDisbursedTrend: metrics.financeWeekly.loansDisbursedTrend,
-          defaultRate: metrics.financeWeekly.defaultRate,
-          defaultRateTrend: metrics.financeWeekly.defaultRateTrend
+          metrics: metrics.finance.metrics.map(m => ({
+            loanType: m.loanType,
+            currency: m.currency,
+            period: m.period,
+            loanValue: m.loanValue,
+            loanCount: m.loanCount,
+            defaultRate: m.defaultRate
+          })),
+          exchangeRates: metrics.finance.exchangeRates.map(r => ({
+            currency: r.currency,
+            rateToUsd: r.rateToUsd
+          }))
         };
       } else if (editingSection === 'engineering') {
         query = `
@@ -420,8 +445,8 @@ export default function AdminPage() {
         };
       } else if (editingSection === 'settings') {
         query = `
-          mutation UpdateSettings($scrollSpeed: Int!, $scrollEnabled: Boolean!, $dashboardTitle: String, $launchStatusTitle: String) {
-            updateSettings(scrollSpeed: $scrollSpeed, scrollEnabled: $scrollEnabled, dashboardTitle: $dashboardTitle, launchStatusTitle: $launchStatusTitle) {
+          mutation UpdateSettings($scrollSpeed: Int!, $scrollEnabled: Boolean!, $dashboardTitle: String, $launchStatusTitle: String, $departments: [DepartmentInput!]) {
+            updateSettings(scrollSpeed: $scrollSpeed, scrollEnabled: $scrollEnabled, dashboardTitle: $dashboardTitle, launchStatusTitle: $launchStatusTitle, departments: $departments) {
               scrollSpeed
             }
           }
@@ -430,7 +455,8 @@ export default function AdminPage() {
           scrollSpeed: metrics.settings.scrollSpeed,
           scrollEnabled: metrics.settings.scrollEnabled,
           dashboardTitle: metrics.settings.dashboardTitle,
-          launchStatusTitle: metrics.settings.launchStatusTitle
+          launchStatusTitle: metrics.settings.launchStatusTitle,
+          departments: metrics.settings.departments?.map((d: any) => ({ name: d.name, headEmail: d.headEmail }))
         };
       }
 
@@ -448,6 +474,7 @@ export default function AdminPage() {
 
       setMessage({ type: 'success', text: `${editingSection.toUpperCase()} updated successfully.` });
       setIsModalOpen(false);
+      setEditingDept(null);
       fetchDashboard();
     } catch (err) {
       setMessage({ type: 'error', text: `Failed to update ${editingSection}.` });
@@ -455,6 +482,10 @@ export default function AdminPage() {
       setSavingSection(null);
       setTimeout(() => setMessage(null), 3000);
     }
+  };
+
+  const handleDownloadReport = () => {
+    window.open('/reports', '_blank');
   };
 
   if (loading) return (
@@ -670,9 +701,17 @@ export default function AdminPage() {
             <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none">
               FY&apos;26 Operating Scoreboard
             </h1>
-            <p className="text-[13px] font-semibold text-slate-400">
-              Last updated: {displayDate}
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-[13px] font-semibold text-slate-400">
+                Last updated: {displayDate}
+              </p>
+              <button 
+                onClick={handleDownloadReport}
+                className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-bold hover:bg-primary/20 transition-colors"
+              >
+                View Graphical Report
+              </button>
+            </div>
           </div>
         </header>
 
@@ -697,8 +736,6 @@ export default function AdminPage() {
                 goal={metrics.customersMonthly.goal}
                 activeMonthly={metrics.customersMonthly.activeMonthly}
                 trend={metrics.customersMonthly.percentageChange}
-                editMode={editMode && canEdit('customers')}
-                onEdit={() => handleOpenEdit('customers')}
               />
             </div>
 
@@ -707,47 +744,27 @@ export default function AdminPage() {
                 current={metrics.launchStatus}
                 history={metrics.launchHistory}
                 editMode={editMode && canEdit('launch')}
-                onEdit={() => handleOpenEdit('launch')}
+                onEdit={(dept) => handleOpenEdit('launch', dept)}
+                userRole={currentUser?.role}
+                userEmail={currentUser?.email}
+                departments={metrics.settings.departments}
               />
             </div>
 
 
             {/* ── Bottom Row (4 cards, each 3 cols) ── */}
             <div className="col-span-12 md:col-span-3">
-              <OpsCard
-                type="OPS"
-                mainMetric={{
-                  label: 'Visits',
-                  current: metrics.opsWeekly.visits,
-                  goal: metrics.opsWeekly.weeklyGoal,
-                }}
-                subMetric={{
-                  label: 'Conversions',
-                  value: metrics.opsWeekly.usersConverted || 0,
-                  trend: 25,
-                }}
-                conversion={{
-                  label: 'Conversion Rate',
-                  value: metrics.opsWeekly.conversionRate,
-                }}
-                editMode={editMode && canEdit('ops')}
-                onEdit={() => handleOpenEdit('ops')}
+              <SalesCard
+                metrics={metrics.salesMarketing}
+                userRole={currentUser?.role}
+                editMode={editMode && (canEdit('marketing') || currentUser?.role === 'CEO')}
+                onEdit={() => handleOpenEdit('sales')}
               />
             </div>
 
             <div className="col-span-12 md:col-span-3">
-              <OpsCard
-                type="PAY"
-                mainMetric={{
-                  label: 'Conversations',
-                  current: metrics.payWeekly.conversations,
-                  goal: metrics.payWeekly.weeklyGoal,
-                }}
-                conversion={{
-                  label: 'Conversation → Conversion Rate',
-                  value: metrics.payWeekly.conversionRate,
-                }}
-                listMetrics={metrics.payWeekly.transfers}
+              <PayCard
+                data={metrics.pay}
                 editMode={editMode && canEdit('pay')}
                 onEdit={() => handleOpenEdit('pay')}
               />
@@ -755,7 +772,7 @@ export default function AdminPage() {
 
             <div className="col-span-12 md:col-span-3">
               <FinanceCard 
-                data={metrics.financeWeekly} 
+                data={metrics.finance}
                 editMode={editMode && canEdit('finance')}
                 onEdit={() => handleOpenEdit('finance')}
               />
@@ -787,7 +804,7 @@ export default function AdminPage() {
                   <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2 uppercase">Update {editingSection}</h2>
                   <p className="text-slate-500 font-medium">Modify operational parameters for this department.</p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <button onClick={() => { setIsModalOpen(false); setEditingDept(null); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <X size={24} className="text-slate-400" />
                 </button>
               </div>
@@ -808,51 +825,165 @@ export default function AdminPage() {
                   </>
                 )}
 
-                {editingSection === 'ops' && (
-                  <>
-                    <InputGroup label="Weekly Visits Goal" value={metrics.opsWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, weeklyGoal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
-                    <InputGroup label="Current Visits" value={metrics.opsWeekly.visits} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, visits: Number(v)}})} />
-                    <InputGroup label="Users Converted" value={metrics.opsWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, opsWeekly: {...metrics.opsWeekly, usersConverted: Number(v)}})} />
-                  </>
+                {editingSection === 'sales' && (
+                  <div className="space-y-6">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marketing Data Entries</p>
+                    {metrics.salesMarketing.map((m, i) => (
+                      <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black text-slate-900 uppercase">{m.touchpoint} ({m.period})</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <InputGroup 
+                            label="Leads" 
+                            value={m.leadsGenerated} 
+                            onChange={(v) => {
+                              const updated = [...metrics.salesMarketing];
+                              updated[i] = { ...updated[i], leadsGenerated: Number(v) };
+                              setMetrics({...metrics, salesMarketing: updated});
+                            }} 
+                          />
+                          <InputGroup 
+                            label="Conversions" 
+                            value={m.conversions} 
+                            onChange={(v) => {
+                              const updated = [...metrics.salesMarketing];
+                              updated[i] = { ...updated[i], conversions: Number(v) };
+                              setMetrics({...metrics, salesMarketing: updated});
+                            }} 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {editingSection === 'pay' && (
-                  <>
-                    <InputGroup label="Engagement Goal" value={metrics.payWeekly.weeklyGoal} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, weeklyGoal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
-                    <InputGroup label="Total Conversations" value={metrics.payWeekly.conversations} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, conversations: Number(v)}})} />
-                    <InputGroup label="Users Converted" value={metrics.payWeekly.usersConverted || 0} onChange={(v) => setMetrics({...metrics, payWeekly: {...metrics.payWeekly, usersConverted: Number(v)}})} />
-                    <div className="pt-4 border-t border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Transfer Channels</p>
-                      <div className="space-y-4">
-                        {metrics.payWeekly.transfers.map((t, i) => (
-                          <div key={i} className="flex items-center gap-4">
-                            <span className="text-xs font-bold text-slate-600 w-20">{t.label}</span>
-                            <input 
-                              type="number" 
-                              value={t.current} 
-                              onChange={(e) => {
-                                const updated = [...metrics.payWeekly.transfers];
-                                updated[i].current = Number(e.target.value);
-                                setMetrics({...metrics, payWeekly: {...metrics.payWeekly, transfers: updated}});
-                              }}
-                              className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900" 
-                            />
+                  <div className="space-y-12 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {['week', 'month'].map(period => (
+                      <div key={period} className="space-y-6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-4 bg-purple-600 rounded-full" />
+                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
+                            {period === 'week' ? 'Weekly' : 'Monthly'} Pay Metrics
+                          </h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                          <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            {(() => {
+                              const metric = metrics.pay.metrics.find(m => m.period === period) || {
+                                period, weeklyGoal: 0, conversations: 0, usersConverted: 0, lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0
+                              };
+                              const updatePayMetric = (field: string, val: number) => {
+                                const newMetrics = [...metrics.pay.metrics];
+                                const idx = newMetrics.findIndex(m => m.period === period);
+                                if (idx > -1) {
+                                  newMetrics[idx] = { ...newMetrics[idx], [field]: val };
+                                } else {
+                                  newMetrics.push({ 
+                                    period: period as any, weeklyGoal: 0, conversations: 0, usersConverted: 0, 
+                                    lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0, [field]: val 
+                                  });
+                                }
+                                setMetrics({ ...metrics, pay: { ...metrics.pay, metrics: newMetrics } });
+                              };
+
+                              return (
+                                <>
+                                  <InputGroup label="Conversations Goal" value={metric.weeklyGoal} onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} disabled={currentUser?.role !== 'CEO'} />
+                                  <InputGroup label="Total Conversations" value={metric.conversations} onChange={(v) => updatePayMetric('conversations', Number(v))} />
+                                  <InputGroup label="Users Converted" value={metric.usersConverted} onChange={(v) => updatePayMetric('usersConverted', Number(v))} />
+                                  <InputGroup label="LCY Transfers" value={metric.lcyTransfers} onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} />
+                                  <InputGroup label="LCY Goal" value={metric.lcyGoal} onChange={(v) => updatePayMetric('lcyGoal', Number(v))} />
+                                  <div className="hidden md:block" />
+                                  <InputGroup label="FCY Transfers" value={metric.fcyTransfers} onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} />
+                                  <InputGroup label="FCY Goal" value={metric.fcyGoal} onChange={(v) => updatePayMetric('fcyGoal', Number(v))} />
+                                </>
+                              );
+                            })()}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
-                  </>
+                    ))}
+                  </div>
                 )}
 
                 {editingSection === 'finance' && (
-                  <>
-                    <InputGroup label="Loan Disbursement Value ($)" value={metrics.financeWeekly.loanDisbursementValue} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loanDisbursementValue: Number(v)}})} />
-                    <InputGroup label="Disbursement Trend (%)" value={metrics.financeWeekly.loanDisbursementTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loanDisbursementTrend: Number(v)}})} />
-                    <InputGroup label="Loans Disbursed" value={metrics.financeWeekly.loansDisbursed} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loansDisbursed: Number(v)}})} />
-                    <InputGroup label="Loans Disbursed Trend (%)" value={metrics.financeWeekly.loansDisbursedTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, loansDisbursedTrend: Number(v)}})} />
-                    <InputGroup label="Default Rate (%)" value={metrics.financeWeekly.defaultRate} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, defaultRate: Number(v)}})} />
-                    <InputGroup label="Default Rate Trend (%)" value={metrics.financeWeekly.defaultRateTrend} onChange={(v) => setMetrics({...metrics, financeWeekly: {...metrics.financeWeekly, defaultRateTrend: Number(v)}})} />
-                  </>
+                  <div className="space-y-12 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {/* Exchange Rates Section */}
+                    <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100">
+                      <div className="flex items-center gap-2 mb-6">
+                        <ArrowDownUp size={16} className="text-indigo-600" />
+                        <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Exchange Rates (vs USD)</h3>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {['NGN', 'USDT', 'USDC'].map(ccy => {
+                          const storedRate = metrics.finance.exchangeRates.find(r => r.currency === ccy)?.rateToUsd ?? 0;
+                          return (
+                            <ExchangeRateInput
+                              key={ccy}
+                              label={`${ccy} Rate`}
+                              value={storedRate}
+                              onCommit={(num) => {
+                                const newRates = [...metrics.finance.exchangeRates];
+                                const idx = newRates.findIndex(r => r.currency === ccy);
+                                if (idx > -1) newRates[idx] = { ...newRates[idx], rateToUsd: num };
+                                else newRates.push({ currency: ccy as any, rateToUsd: num });
+                                setMetrics({ ...metrics, finance: { ...metrics.finance, exchangeRates: newRates } });
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Metrics Section */}
+                    <div className="space-y-12">
+                      {['week', 'month'].map(period => (
+                        <div key={period} className="space-y-6">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
+                            <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
+                              {period === 'week' ? 'Weekly' : 'Monthly'} Metrics
+                            </h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-8">
+                            {['Payables', 'Receivables', 'Payment'].map(type => (
+                              <div key={type} className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{type}</p>
+                                <div className="space-y-4">
+                                  {['USD', 'NGN', 'USDT', 'USDC'].map(ccy => {
+                                    const metric = metrics.finance.metrics.find(m => m.period === period && m.loanType === type && m.currency === ccy) || { loanValue: 0, loanCount: 0, defaultRate: 0 };
+                                    const updateMetric = (field: string, val: number) => {
+                                      const newMetrics = [...metrics.finance.metrics];
+                                      const idx = newMetrics.findIndex(m => m.period === period && m.loanType === type && m.currency === ccy);
+                                      if (idx > -1) {
+                                        newMetrics[idx] = { ...newMetrics[idx], [field]: val };
+                                      } else {
+                                        newMetrics.push({ period: period as any, loanType: type as any, currency: ccy as any, loanValue: 0, loanCount: 0, defaultRate: 0, [field]: val });
+                                      }
+                                      setMetrics({ ...metrics, finance: { ...metrics.finance, metrics: newMetrics } });
+                                    };
+
+                                    return (
+                                      <div key={ccy} className="grid grid-cols-4 gap-4 items-end bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                        <div className="text-[10px] font-black text-slate-500 uppercase">{ccy}</div>
+                                        <InputGroup label="Value" value={metric.loanValue} onChange={(v) => updateMetric('loanValue', Number(v))} />
+                                        <InputGroup label="Count" value={metric.loanCount} onChange={(v) => updateMetric('loanCount', Number(v))} />
+                                        <InputGroup label="Default %" value={metric.defaultRate} onChange={(v) => updateMetric('defaultRate', Number(v))} />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {editingSection === 'launch' && (
@@ -905,24 +1036,27 @@ export default function AdminPage() {
                         <div className="space-y-6">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dept Progress (%)</p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                            {metrics.launchStatus.deptTargets.map((d, i) => (
-                              <div key={i} className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{d.name}</span>
-                                  <span className="text-[11px] font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-lg">{d.progress}%</span>
+                            {metrics.launchStatus.deptTargets.filter(d => !editingDept || d.name === editingDept).map((d, i) => {
+                              const originalIndex = metrics.launchStatus.deptTargets.findIndex(orig => orig.name === d.name);
+                              return (
+                                <div key={i} className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{d.name}</span>
+                                    <span className="text-[11px] font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-lg">{d.progress}%</span>
+                                  </div>
+                                  <input 
+                                    type="range" min="0" max="100" 
+                                    value={d.progress} 
+                                    onChange={(e) => {
+                                      const updated = [...metrics.launchStatus.deptTargets];
+                                      updated[originalIndex].progress = Number(e.target.value);
+                                      setMetrics({...metrics, launchStatus: {...metrics.launchStatus, deptTargets: updated}});
+                                    }}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]" 
+                                  />
                                 </div>
-                                <input 
-                                  type="range" min="0" max="100" 
-                                  value={d.progress} 
-                                  onChange={(e) => {
-                                    const updated = [...metrics.launchStatus.deptTargets];
-                                    updated[i].progress = Number(e.target.value);
-                                    setMetrics({...metrics, launchStatus: {...metrics.launchStatus, deptTargets: updated}});
-                                  }}
-                                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]" 
-                                />
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -1150,6 +1284,68 @@ export default function AdminPage() {
                               Change the title of the Quarterly Targets / Launch Status card.
                             </p>
                           </div>
+
+                          {currentUser?.role === 'CEO' && (
+                            <div className="col-span-1 md:col-span-2 pt-6 border-t border-slate-200">
+                              <div className="flex justify-between items-center mb-6">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Departments & Heads</label>
+                                <button 
+                                  onClick={() => {
+                                    const newDepts = [...(metrics.settings.departments || []), { name: 'New Department', headEmail: '' }];
+                                    setMetrics({...metrics, settings: {...metrics.settings, departments: newDepts}});
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all"
+                                >
+                                  <Plus size={12} /> Add Dept
+                                </button>
+                              </div>
+                              <div className="space-y-4">
+                                {(metrics.settings.departments || []).map((dept: any, i: number) => (
+                                  <div key={i} className="grid grid-cols-2 gap-4 p-4 bg-white border border-slate-100 rounded-xl relative group">
+                                    <button 
+                                      onClick={() => {
+                                        const updated = metrics.settings.departments!.filter((_: any, idx: number) => idx !== i);
+                                        setMetrics({...metrics, settings: {...metrics.settings, departments: updated}});
+                                      }}
+                                      className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-bold text-slate-400 uppercase">Name</label>
+                                      <input 
+                                        type="text" 
+                                        value={dept.name} 
+                                        onChange={(v) => {
+                                          const updated = [...metrics.settings.departments!];
+                                          updated[i].name = v.target.value;
+                                          setMetrics({...metrics, settings: {...metrics.settings, departments: updated}});
+                                        }} 
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-bold text-slate-400 uppercase">Dept Head</label>
+                                      <select 
+                                        value={dept.headEmail || ''} 
+                                        onChange={(e) => {
+                                          const updated = [...metrics.settings.departments!];
+                                          updated[i].headEmail = e.target.value;
+                                          setMetrics({...metrics, settings: {...metrics.settings, departments: updated}});
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold focus:outline-none"
+                                      >
+                                        <option value="">Select Head</option>
+                                        {users.map(u => (
+                                          <option key={u.email} value={u.email}>{u.name}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1416,7 +1612,7 @@ export default function AdminPage() {
 
               <div className="mt-10 flex gap-4">
                 <button 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setEditingDept(null); }}
                   className="flex-1 py-5 bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-100 transition-all"
                 >
                   Cancel
@@ -1659,3 +1855,35 @@ function InputGroup({ label, value, onChange, type = 'text', disabled = false }:
     </div>
   );
 }
+
+// Dedicated exchange rate input: keeps raw string while typing, only commits parsed number on blur.
+// This prevents small decimals (e.g. 0.00065 for NGN) from being blocked by Number() coercion on every keystroke.
+function ExchangeRateInput({ label, value, onCommit }: { label: string; value: number; onCommit: (n: number) => void }) {
+  const [raw, setRaw] = useState(value === 0 ? '' : String(value));
+
+  // Sync from outside only when the stored value changes (e.g. fresh data load)
+  useEffect(() => {
+    setRaw(value === 0 ? '' : String(value));
+  }, [value]);
+
+  return (
+    <div className="space-y-2">
+      <div className="px-1">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+      </div>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={raw}
+        onChange={(e) => setRaw(e.target.value)}
+        onBlur={() => {
+          const num = parseFloat(raw);
+          if (!isNaN(num)) onCommit(num);
+        }}
+        placeholder="e.g. 0.00065"
+        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+      />
+    </div>
+  );
+}
+

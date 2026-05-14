@@ -160,6 +160,7 @@ create table if not exists dashboard_settings (
   scroll_enabled boolean not null default true,
   dashboard_title text not null default 'FY''26 Operating Dashboard',
   launch_status_title text not null default 'Launch Readiness',
+  departments   jsonb not null default '[]',
   updated_at    timestamptz not null default now()
 );
 

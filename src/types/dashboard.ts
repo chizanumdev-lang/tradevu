@@ -36,6 +36,19 @@ export interface DeptTarget {
   progress: number;
 }
 
+export interface Department {
+  name: string;
+  headEmail: string;
+}
+
+export interface DashboardSettings {
+  scrollSpeed: number;
+  scrollEnabled: boolean;
+  dashboardTitle: string;
+  launchStatusTitle: string;
+  departments: Department[];
+}
+
 export interface LaunchStatus {
   /** e.g. "Q2" */
   phase: string;
@@ -48,20 +61,11 @@ export interface LaunchStatus {
 
 // ─── Ops Weekly ───────────────────────────────────────────────────────────────
 
-export interface WeeklyOps {
-  weeklyGoal: number;
-  /** Total visits this week */
-  visits: number;
-  /** Conversations (engaged subset of visits) */
-  conversations: number;
-  /** Users who actually used the product */
-  usersConverted: number;
-  /**
-   * Conversion rate: conversations that led to actual product use.
-   * Stored as a percentage (0-100).
-   */
-  conversionRate: number;
-  activePilots: number;
+export interface SalesMarketingMetric {
+  touchpoint: 'LinkedIn' | 'Website' | 'X';
+  period: 'week' | 'month';
+  leadsGenerated: number;
+  conversions: number;
 }
 
 // ─── Pay Weekly ───────────────────────────────────────────────────────────────
@@ -72,28 +76,41 @@ export interface TransferMetric {
   goal: number;
 }
 
-export interface WeeklyPay {
+export interface PayMetric {
+  period: 'week' | 'month';
   weeklyGoal: number;
-  /** Total conversations this week */
   conversations: number;
-  /** Users who actually used the product */
   usersConverted: number;
-  /**
-   * Conversion rate: conversations that led to actual product use.
-   * Stored as a percentage (0-100).
-   */
-  conversionRate: number;
-  transfers: TransferMetric[];
+  lcyTransfers: number;
+  lcyGoal: number;
+  fcyTransfers: number;
+  fcyGoal: number;
 }
 
-// ─── Finance Weekly ───────────────────────────────────────────────────────────
-export interface WeeklyFinance {
-  loanDisbursementValue: number;
-  loanDisbursementTrend: number;
-  loansDisbursed: number;
-  loansDisbursedTrend: number;
+export interface PayData {
+  metrics: PayMetric[];
+}
+
+export type LoanType = 'Payables' | 'Receivables' | 'Payment';
+export type Currency = 'USD' | 'NGN' | 'USDT' | 'USDC';
+
+export interface FinanceMetric {
+  loanType: LoanType;
+  currency: Currency;
+  period: 'week' | 'month';
+  loanValue: number;
+  loanCount: number;
   defaultRate: number;
-  defaultRateTrend: number;
+}
+
+export interface ExchangeRate {
+  currency: Currency;
+  rateToUsd: number;
+}
+
+export interface FinanceData {
+  metrics: FinanceMetric[];
+  exchangeRates: ExchangeRate[];
 }
 
 // ─── Engineering ──────────────────────────────────────────────────────────────
@@ -126,17 +143,12 @@ export interface DashboardData {
   revenueAnnual: RevenueMetrics;
   launchStatus: LaunchStatus;
   launchHistory?: LaunchStatus[];
-  opsWeekly: WeeklyOps;
-  payWeekly: WeeklyPay;
-  financeWeekly: WeeklyFinance;
+  salesMarketing: SalesMarketingMetric[];
+  pay: PayData;
+  finance: FinanceData;
   engineering: EngineeringData;
   engineeringRoadmap: EngineeringProject[];
-  settings: {
-    scrollSpeed: number;
-    scrollEnabled: boolean;
-    dashboardTitle: string;
-    launchStatusTitle: string;
-  };
+  settings: DashboardSettings;
   users: User[];
   lastUpdateTimestamp?: string;
   serverTime?: string;

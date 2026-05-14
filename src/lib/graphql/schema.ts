@@ -10,6 +10,7 @@ export const typeDefs = gql`
     name: String!
     role: String!
     permissions: [String]
+    password: String
     requiresPasswordChange: Boolean
   }
 
@@ -38,13 +39,11 @@ export const typeDefs = gql`
     label: String
   }
 
-  type WeeklyOps {
-    weeklyGoal: Int!
-    visits: Int!
-    conversations: Int!
-    usersConverted: Int!
-    conversionRate: Int!
-    activePilots: Int!
+  type SalesMarketingMetric {
+    touchpoint: String!
+    period: String!
+    leadsGenerated: Int!
+    conversions: Int!
   }
 
   type TransferMetric {
@@ -54,21 +53,38 @@ export const typeDefs = gql`
     goal: Float!
   }
 
-  type WeeklyPay {
+  type PayMetric {
+    period: String!
     weeklyGoal: Int!
     conversations: Int!
     usersConverted: Int!
-    conversionRate: Int!
-    transfers: [TransferMetric!]!
+    lcyTransfers: Int!
+    lcyGoal: Int!
+    fcyTransfers: Int!
+    fcyGoal: Int!
   }
 
-  type WeeklyFinance {
-    loanDisbursementValue: Float!
-    loanDisbursementTrend: Float!
-    loansDisbursed: Int!
-    loansDisbursedTrend: Float!
+  type PayData {
+    metrics: [PayMetric!]!
+  }
+
+  type FinanceMetric {
+    loanType: String!
+    currency: String!
+    period: String!
+    loanValue: Float!
+    loanCount: Int!
     defaultRate: Float!
-    defaultRateTrend: Float!
+  }
+
+  type ExchangeRate {
+    currency: String!
+    rateToUsd: Float!
+  }
+
+  type FinanceData {
+    metrics: [FinanceMetric!]!
+    exchangeRates: [ExchangeRate!]!
   }
 
   type EngineeringProject {
@@ -93,11 +109,17 @@ export const typeDefs = gql`
     health: [EngineeringHealthMetric!]!
   }
 
+  type Department {
+    name: String!
+    headEmail: String
+  }
+
   type DashboardSettings {
     scrollSpeed: Int!
     scrollEnabled: Boolean!
     dashboardTitle: String!
     launchStatusTitle: String!
+    departments: [Department!]
   }
 
   type DashboardData {
@@ -105,9 +127,9 @@ export const typeDefs = gql`
     revenueAnnual: RevenueMetrics!
     launchStatus: LaunchStatus!
     launchHistory: [LaunchStatus!]
-    opsWeekly: WeeklyOps!
-    payWeekly: WeeklyPay!
-    financeWeekly: WeeklyFinance!
+    salesMarketing: [SalesMarketingMetric!]!
+    pay: PayData!
+    finance: FinanceData!
     engineering: EngineeringData!
     engineeringRoadmap: [EngineeringProject!]!
     settings: DashboardSettings!
@@ -121,9 +143,9 @@ export const typeDefs = gql`
     revenueAnnual: RevenueMetrics!
     customersMonthly: CustomerMetrics!
     launchStatus: [LaunchStatus!]!
-    opsWeekly: WeeklyOps!
-    payWeekly: WeeklyPay!
-    financeWeekly: WeeklyFinance!
+    salesMarketing: [SalesMarketingMetric!]!
+    pay: PayData!
+    finance: FinanceData!
     engineering: EngineeringData!
     settings: DashboardSettings!
     users: [User!]!
@@ -164,28 +186,48 @@ export const typeDefs = gql`
     requiresPasswordChange: Boolean
   }
 
+  input SalesMarketingInput {
+    touchpoint: String!
+    period: String!
+    leadsGenerated: Int!
+    conversions: Int!
+  }
+
+  input PayInput {
+    period: String!
+    weeklyGoal: Int!
+    conversations: Int!
+    usersConverted: Int!
+    lcyTransfers: Int!
+    lcyGoal: Int!
+    fcyTransfers: Int!
+    fcyGoal: Int!
+  }
+
+  input FinanceMetricInput {
+    loanType: String!
+    currency: String!
+    period: String!
+    loanValue: Float!
+    loanCount: Int!
+    defaultRate: Float!
+  }
+
+  input ExchangeRateInput {
+    currency: String!
+    rateToUsd: Float!
+  }
+
   type Mutation {
     updateRevenue(goal: Float!, current: Float!, fiscalYear: Int): RevenueMetrics!
     updateCustomers(totalCustomers: Int!, monthlyGoal: Int!, activeMonthly: Int!): CustomerMetrics!
-    updateOps(weeklyGoal: Int!, visits: Int!, conversations: Int!, usersConverted: Int!): WeeklyOps!
-    updatePay(
-      weeklyGoal: Int!
-      conversations: Int!
-      usersConverted: Int!
-      lcyTransfers: Float!
-      lcyGoal: Float!
-      fcyTransfers: Float!
-      fcyGoal: Float!
-    ): WeeklyPay!
+    updateSales(metrics: [SalesMarketingInput!]!): [SalesMarketingMetric!]!
+    updatePay(metrics: [PayInput!]!): PayData!
     updateLaunchStatus(phases: [LaunchPhaseInput!]!): [LaunchStatus!]!
     updateFinance(
-      loanDisbursementValue: Float!
-      loanDisbursementTrend: Float!
-      loansDisbursed: Int!
-      loansDisbursedTrend: Float!
-      defaultRate: Float!
-      defaultRateTrend: Float!
-    ): WeeklyFinance!
+      metrics: [FinanceMetricInput!]!
+      exchangeRates: [ExchangeRateInput!]!
+    ): FinanceData!
     updateEngineering(
       projects: [EngineeringProjectInput!]!
       health: [EngineeringHealthMetricInput!]!
@@ -195,9 +237,15 @@ export const typeDefs = gql`
       scrollEnabled: Boolean!
       dashboardTitle: String
       launchStatusTitle: String
+      departments: [DepartmentInput!]
     ): DashboardSettings!
     upsertUser(user: UserInput!): User!
     updateUserPermissions(email: String!, role: String!, permissions: [String!]!): User!
     deleteUser(email: String!): Boolean!
+  }
+
+  input DepartmentInput {
+    name: String!
+    headEmail: String
   }
 `;

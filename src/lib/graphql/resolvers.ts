@@ -9,9 +9,9 @@ export const resolvers = {
         customersMonthly,
         revenueAnnual,
         launchStatus,
-        opsWeekly,
-        payWeekly,
-        financeWeekly,
+        salesMarketing,
+        pay,
+        finance,
         engineering,
         lastUpdateTimestamp,
         settings,
@@ -20,9 +20,9 @@ export const resolvers = {
         queries.fetchCustomerMetrics(supabase),
         queries.fetchRevenueAnnual(supabase),
         queries.fetchLaunchStatus(supabase),
-        queries.fetchOpsWeekly(supabase),
-        queries.fetchPayWeekly(supabase),
-        queries.fetchFinanceWeekly(supabase),
+        queries.fetchSalesMarketing(supabase),
+        queries.fetchPay(supabase),
+        queries.fetchFinance(supabase),
         queries.fetchEngineering(supabase),
         queries.fetchLastUpdateTimestamp(supabase),
         queries.fetchDashboardSettings(supabase),
@@ -34,9 +34,9 @@ export const resolvers = {
         revenueAnnual,
         launchStatus: launchStatus.current,
         launchHistory: launchStatus.history,
-        opsWeekly,
-        payWeekly,
-        financeWeekly,
+        salesMarketing,
+        pay,
+        finance,
         engineering,
         engineeringRoadmap: engineering.projects,
         lastUpdateTimestamp,
@@ -58,17 +58,17 @@ export const resolvers = {
       const { current, history } = await queries.fetchLaunchStatus(supabase);
       return [current, ...history];
     },
-    opsWeekly: async () => {
+    salesMarketing: async () => {
       const supabase = await createClient();
-      return queries.fetchOpsWeekly(supabase);
+      return queries.fetchSalesMarketing(supabase);
     },
-    payWeekly: async () => {
+    pay: async () => {
       const supabase = await createClient();
-      return queries.fetchPayWeekly(supabase);
+      return queries.fetchPay(supabase);
     },
-    financeWeekly: async () => {
+    finance: async () => {
       const supabase = await createClient();
-      return queries.fetchFinanceWeekly(supabase);
+      return queries.fetchFinance(supabase);
     },
     engineering: async () => {
       const supabase = await createClient();
@@ -151,41 +151,16 @@ export const resolvers = {
       return queries.fetchCustomerMetrics(supabase);
     },
 
-    updateOps: async (_: unknown, { weeklyGoal, visits, conversations, usersConverted }: { weeklyGoal: number, visits: number, conversations: number, usersConverted: number }) => {
+    updateSales: async (_: unknown, { metrics }: { metrics: any[] }) => {
       const supabase = await createClient();
-      const { error } = await supabase
-        .from('ops_weekly')
-        .insert({
-          weekly_goal: weeklyGoal,
-          visits,
-          conversations,
-          users_converted: usersConverted,
-          week_start: new Date().toISOString(),
-          recorded_at: new Date().toISOString()
-        });
-
-      if (error) throw new Error(error.message);
-      return queries.fetchOpsWeekly(supabase);
+      await queries.updateSalesMarketing(supabase, metrics);
+      return queries.fetchSalesMarketing(supabase);
     },
 
-    updatePay: async (_: unknown, { weeklyGoal, conversations, usersConverted, lcyTransfers, lcyGoal, fcyTransfers, fcyGoal }: { weeklyGoal: number, conversations: number, usersConverted: number, lcyTransfers: number, lcyGoal: number, fcyTransfers: number, fcyGoal: number }) => {
+    updatePay: async (_: unknown, { metrics }: { metrics: any[] }) => {
       const supabase = await createClient();
-      const { error } = await supabase
-        .from('pay_weekly')
-        .insert({
-          weekly_goal: weeklyGoal,
-          conversations,
-          users_converted: usersConverted,
-          lcy_transfers: lcyTransfers,
-          lcy_goal: lcyGoal,
-          fcy_transfers: fcyTransfers,
-          fcy_goal: fcyGoal,
-          week_start: new Date().toISOString(),
-          recorded_at: new Date().toISOString()
-        });
-
-      if (error) throw new Error(error.message);
-      return queries.fetchPayWeekly(supabase);
+      await queries.updatePay(supabase, metrics);
+      return queries.fetchPay(supabase);
     },
 
     updateLaunchStatus: async (_: unknown, { phases }: { phases: any[] }) => {
@@ -211,23 +186,10 @@ export const resolvers = {
       return [current, ...history];
     },
 
-    updateFinance: async (_: unknown, args: { loanDisbursementValue: number, loanDisbursementTrend: number, loansDisbursed: number, loansDisbursedTrend: number, defaultRate: number, defaultRateTrend: number }) => {
+    updateFinance: async (_: unknown, { metrics, exchangeRates }: { metrics: any[], exchangeRates: any[] }) => {
       const supabase = await createClient();
-      const { error } = await supabase
-        .from('finance_weekly')
-        .insert({
-          loan_disbursement_value: args.loanDisbursementValue,
-          loan_disbursement_trend: args.loanDisbursementTrend,
-          loans_disbursed: args.loansDisbursed,
-          loans_disbursed_trend: args.loansDisbursedTrend,
-          default_rate: args.defaultRate,
-          default_rate_trend: args.defaultRateTrend,
-          week_start: new Date().toISOString(),
-          recorded_at: new Date().toISOString()
-        });
-
-      if (error) throw new Error(error.message);
-      return queries.fetchFinanceWeekly(supabase);
+      await queries.updateFinance(supabase, metrics, exchangeRates);
+      return queries.fetchFinance(supabase);
     },
 
     updateEngineering: async (_: unknown, { projects, health }: { projects: any[], health: any[] }) => {
@@ -268,13 +230,14 @@ export const resolvers = {
       return queries.fetchEngineering(supabase);
     },
 
-    updateSettings: async (_: unknown, args: { scrollSpeed: number, scrollEnabled: boolean, dashboardTitle?: string, launchStatusTitle?: string }) => {
+    updateSettings: async (_: unknown, args: { scrollSpeed: number, scrollEnabled: boolean, dashboardTitle?: string, launchStatusTitle?: string, departments?: any[] }) => {
       const supabase = await createClient();
       await queries.updateDashboardSettings(supabase, {
         scrollSpeed: args.scrollSpeed,
         scrollEnabled: args.scrollEnabled,
         dashboardTitle: args.dashboardTitle || "FY'26 Operating Dashboard",
-        launchStatusTitle: args.launchStatusTitle || "Launch Readiness"
+        launchStatusTitle: args.launchStatusTitle || "Launch Readiness",
+        departments: args.departments || []
       });
       return queries.fetchDashboardSettings(supabase);
     },

@@ -64,15 +64,17 @@ export const RevenueRing: React.FC<RevenueRingProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between pt-8 border-t border-slate-50 mt-8">
-        <div>
+      <div className={`flex ${editMode ? 'justify-between' : 'justify-center'} pt-8 border-t border-slate-50 mt-8`}>
+        <div className={editMode ? '' : 'text-center'}>
           <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Revenue target</div>
           <div className="text-[22px] font-black text-slate-900">${(goal / 1000000).toFixed(0)}m</div>
         </div>
-        <div className="text-right">
-          <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Current YTD</div>
-          <div className="text-[22px] font-black text-slate-900">${(current / 1000).toFixed(0)}k</div>
-        </div>
+        {editMode && (
+          <div className="text-right">
+            <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Current YTD</div>
+            <div className="text-[22px] font-black text-slate-900">${(current / 1000).toFixed(0)}k</div>
+          </div>
+        )}
       </div>
     </div>
   );

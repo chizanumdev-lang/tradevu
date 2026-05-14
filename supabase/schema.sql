@@ -40,44 +40,50 @@ create table if not exists customer_metrics (
 -- ── 4. Ops Weekly ───────────────────────────────────────────
 -- Visits, conversations, and conversion tracking for Operations.
 -- Conversion rate = users_converted / conversations (visits that led to product use).
-create table if not exists ops_weekly (
-  id                uuid primary key default gen_random_uuid(),
-  week_start        date        not null,
-  weekly_goal       int         not null,         -- target visits
-  visits            int         not null default 0,
-  conversations     int         not null default 0,  -- subset of visits that engaged
-  users_converted   int         not null default 0,  -- conversations → actual product use
-  recorded_at       timestamptz not null default now()
+create table if not exists sales_marketing (
+  id               uuid primary key default gen_random_uuid(),
+  touchpoint       text not null, -- LinkedIn, Website, X
+  period           text not null, -- week, month
+  leads_generated  int not null default 0,
+  conversions      int not null default 0,
+  recorded_at      timestamptz not null default now()
 );
 
--- ── 5. Pay Weekly ───────────────────────────────────────────
+-- ── 5. Pay Metrics ───────────────────────────────────────────
 -- Conversations, conversions, LCY/FCY transfer counts for Tradevu Pay.
 -- Conversion rate = users_converted / conversations.
-create table if not exists pay_weekly (
+create table if not exists pay_metrics (
   id                uuid primary key default gen_random_uuid(),
-  week_start        date        not null,
-  weekly_goal       int         not null,         -- target conversations
-  conversations     int         not null default 0,
-  users_converted   int         not null default 0,  -- conversations → product use
-  lcy_transfers     int         not null default 0,
-  lcy_goal          int         not null default 2,
-  fcy_transfers     int         not null default 0,
-  fcy_goal          int         not null default 2,
+  period            text not null, -- week, month
+  weekly_goal       int not null default 0,
+  conversations     int not null default 0,
+  users_converted   int not null default 0,  -- conversations → product use
+  lcy_transfers     int not null default 0,
+  lcy_goal          int not null default 2,
+  fcy_transfers     int not null default 0,
+  fcy_goal          int not null default 2,
   recorded_at       timestamptz not null default now()
 );
 
 -- ── 6. Finance Weekly ─────────────────────────────────────────
 -- Loan disbursements and default rates for Finance.
-create table if not exists finance_weekly (
-  id                        uuid primary key default gen_random_uuid(),
-  week_start                date        not null,
-  loan_disbursement_value   numeric(15,2) not null default 0,
-  loan_disbursement_trend   int         not null default 0,
-  loans_disbursed           int         not null default 0,
-  loans_disbursed_trend     int         not null default 0,
-  default_rate              numeric(5,2) not null default 0,
-  default_rate_trend        int         not null default 0,
-  recorded_at               timestamptz not null default now()
+create table if not exists exchange_rates (
+  id           uuid primary key default gen_random_uuid(),
+  currency     text not null unique,
+  rate_to_usd  float not null,
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists finance_metrics (
+  id              uuid primary key default gen_random_uuid(),
+  loan_type       text not null, -- Payables, Receivables, Payment
+  currency        text not null, -- USD, NGN, USDT, USDC
+  period          text not null, -- week, month
+  loan_value      float not null default 0,
+  loan_count      int not null default 0,
+  default_rate    float not null default 0,
+  historical_rate_to_usd float, -- Rate at the time of entry for reporting
+  recorded_at     timestamptz not null default now()
 );
 
 -- ── 6. Engineering Projects ─────────────────────────────────
@@ -113,6 +119,7 @@ create table if not exists dashboard_settings (
   scroll_enabled boolean not null default true,
   dashboard_title text not null default 'FY''26 Operating Dashboard',
   launch_status_title text not null default 'Launch Readiness',
+  departments   jsonb       not null default '[]',
   updated_at    timestamptz not null default now()
 );
 
@@ -138,19 +145,36 @@ insert into customer_metrics (period_start, total_customers, monthly_goal, activ
   (date_trunc('month', current_date)::date, 342, 500, 100)
 on conflict do nothing;
 
--- Ops weekly seed (current week)
-insert into ops_weekly (week_start, weekly_goal, visits, conversations, users_converted) values
-  (date_trunc('week', current_date)::date, 10, 28, 50, 12)
+-- Sales & Marketing seed
+insert into sales_marketing (touchpoint, period, leads_generated, conversions) values
+  ('LinkedIn', 'week',  20, 5),
+  ('Website',  'week',  50, 12),
+  ('X',        'week',  15, 3),
+  ('LinkedIn', 'month', 80, 20),
+  ('Website',  'month', 200, 45),
+  ('X',        'month', 60, 10)
 on conflict do nothing;
 
--- Pay weekly seed (current week)
-insert into pay_weekly (week_start, weekly_goal, conversations, users_converted, lcy_transfers, lcy_goal, fcy_transfers, fcy_goal) values
-  (date_trunc('week', current_date)::date, 10, 28, 9, 1, 2, 5, 2)
+-- Pay metrics seed
+insert into pay_metrics (period, weekly_goal, conversations, users_converted, lcy_transfers, lcy_goal, fcy_transfers, fcy_goal) values
+  ('week',  10, 28, 9, 1, 2, 5, 2),
+  ('month', 40, 110, 35, 4, 8, 20, 8)
 on conflict do nothing;
 
--- Finance weekly seed (current week)
-insert into finance_weekly (week_start, loan_disbursement_value, loan_disbursement_trend, loans_disbursed, loans_disbursed_trend, default_rate, default_rate_trend) values
-  (date_trunc('week', current_date)::date, 2000000, 25, 15, 25, 12, 25)
+-- Exchange rates seed
+insert into exchange_rates (currency, rate_to_usd) values
+  ('USD', 1.0),
+  ('NGN', 0.00065),
+  ('USDT', 1.0),
+  ('USDC', 1.0)
+on conflict (currency) do update set rate_to_usd = excluded.rate_to_usd;
+
+-- Finance metrics seed
+insert into finance_metrics (loan_type, currency, period, loan_value, loan_count, default_rate) values
+  ('Payables',    'USD',  'week', 50000, 10, 2.5),
+  ('Receivables', 'NGN',  'week', 10000000, 15, 4.0),
+  ('Payment',     'USDT', 'week', 25000, 5, 1.2),
+  ('Payables',    'USD',  'month', 200000, 40, 2.2)
 on conflict do nothing;
 
 -- Engineering projects seed
@@ -180,6 +204,16 @@ create table if not exists dashboard_users (
   password                  text not null,
   requires_password_change  boolean not null default false,
   created_at                timestamptz not null default now()
+);
+
+-- ── 10. Customers ──────────────────────────────────────────
+-- Individual customer records for dynamic computation.
+create table if not exists customers (
+  id              uuid primary key default gen_random_uuid(),
+  email           text unique not null,
+  name            text,
+  last_logged_in  timestamptz not null default now(),
+  created_at      timestamptz not null default now()
 );
 
 -- Seed users

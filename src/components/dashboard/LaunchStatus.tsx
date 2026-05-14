@@ -6,8 +6,11 @@ interface LaunchStatusProps {
   current: LaunchStatusType;
   history?: LaunchStatusType[];
   editMode?: boolean;
-  onEdit?: () => void;
+  onEdit?: (dept?: string) => void;
   title?: string;
+  userRole?: string;
+  userEmail?: string;
+  departments?: { name: string; headEmail: string }[];
 }
 
 export const LaunchStatus: React.FC<LaunchStatusProps> = ({ 
@@ -15,6 +18,9 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
   history = [],
   editMode,
   onEdit,
+  userRole,
+  userEmail,
+  departments
 }) => {
   const allSlides = [current, ...history];
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,7 +33,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
     if (allSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % allSlides.length);
-    }, 15000);
+    }, 8000); // Minimum 8 seconds
     return () => clearInterval(interval);
   }, [allSlides.length]);
 
@@ -36,9 +42,9 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
 
   return (
     <div className="card h-full flex flex-col relative group transition-all duration-500 overflow-hidden">
-      {editMode && onEdit && (
+      {editMode && onEdit && userRole === 'CEO' && (
         <button 
-          onClick={onEdit}
+          onClick={() => onEdit()}
           className="absolute -top-1 -right-1 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-20"
         >
           <Edit2 size={14} />
@@ -51,9 +57,8 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
           QUARTERLY TARGETS
         </div>
         
-        {/* Pagination Dots */}
         <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
+          {allSlides.slice(0, 3).map((_, i) => (
             <div 
               key={i} 
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -81,22 +86,35 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
 
         {/* Sub Metrics */}
         <div className="flex flex-col gap-6 mt-auto">
-          {slide.deptTargets.map((dept) => (
-            <div key={dept.name} className="flex items-center gap-6">
-              <span className="text-[17px] font-semibold text-[#0F172A] w-[110px] shrink-0">
-                {dept.name}
-              </span>
-              <div className="flex-1 progress-track h-[7px] bg-[#F1F5F9]">
-                <div 
-                  className={`progress-fill h-full transition-all duration-1000 ${currentIndex === 0 ? 'bg-[#7C3AED]' : 'bg-[#94A3B8]'}`} 
-                  style={{ width: `${dept.progress}%` }} 
-                />
+          {slide.deptTargets.map((dept) => {
+            const isDeptHead = departments?.find(d => d.name === dept.name)?.headEmail === userEmail;
+            const canEditThisDept = userRole === 'CEO' || isDeptHead;
+
+            return (
+              <div key={dept.name} className="flex items-center gap-6 group/dept">
+                <span className="text-[17px] font-semibold text-[#0F172A] w-[110px] shrink-0">
+                  {dept.name}
+                </span>
+                <div className="flex-1 progress-track h-[7px] bg-[#F1F5F9] relative">
+                  <div 
+                    className={`progress-fill h-full transition-all duration-1000 ${currentIndex === 0 ? 'bg-[#7C3AED]' : 'bg-[#94A3B8]'}`} 
+                    style={{ width: `${dept.progress}%` }} 
+                  />
+                  {editMode && onEdit && canEditThisDept && (
+                    <button 
+                      onClick={() => onEdit(dept.name)}
+                      className="absolute -right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-slate-100 rounded-full flex items-center justify-center text-primary shadow-sm opacity-0 group-hover/dept:opacity-100 transition-opacity z-10"
+                    >
+                      <Edit2 size={10} />
+                    </button>
+                  )}
+                </div>
+                <span className="text-[16px] font-semibold text-[#94A3B8] w-[45px] text-right">
+                  {dept.progress}%
+                </span>
               </div>
-              <span className="text-[16px] font-semibold text-[#94A3B8] w-[45px] text-right">
-                {dept.progress}%
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
