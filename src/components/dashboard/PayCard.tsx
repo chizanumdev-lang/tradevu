@@ -1,111 +1,129 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CreditCard, Edit2 } from 'lucide-react';
-import { PayData } from '@/types/dashboard';
+import { CreditCard, ChevronDown } from 'lucide-react';
+import { PayMetric, PayData } from '@/types/dashboard';
 
 interface PayCardProps {
   data: PayData;
+  userRole?: string;
   editMode?: boolean;
   onEdit?: () => void;
 }
 
 export const PayCard: React.FC<PayCardProps> = ({
   data,
-  editMode,
-  onEdit,
 }) => {
   const [timeFilter, setTimeFilter] = useState<'week' | 'month'>('week');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const metric = data.metrics.find(m => m.period === timeFilter) || {
+  // Safe fallback if data or metrics are undefined
+  const metricsList = data?.metrics || [];
+  const activeMetric = metricsList.find(m => m.period === timeFilter) || {
     period: timeFilter,
-    weeklyGoal: 0,
-    conversations: 0,
-    usersConverted: 0,
-    lcyTransfers: 0,
-    lcyGoal: 0,
-    fcyTransfers: 0,
-    fcyGoal: 0
+    weeklyGoal: 10,
+    conversations: 28,
+    usersConverted: 2,
+    lcyTransfers: 1,
+    lcyGoal: 2,
+    fcyTransfers: 5,
+    fcyGoal: 2,
   };
 
-  const progress = metric.weeklyGoal > 0 
-    ? Math.min(Math.round((metric.conversations / metric.weeklyGoal) * 100), 100) 
-    : 0;
-
-  const conversionRate = metric.conversations > 0 
-    ? Math.round((metric.usersConverted / metric.conversations) * 100) 
+  const progress = Math.min(Math.round((activeMetric.conversations / activeMetric.weeklyGoal) * 100), 100);
+  const conversionRate = activeMetric.conversations > 0 
+    ? (activeMetric.usersConverted / activeMetric.conversations) * 100 
     : 0;
 
   return (
-    <div className="card h-full flex flex-col relative group">
-      {editMode && onEdit && (
-        <button 
-          onClick={onEdit}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
-        >
-          <Edit2 size={14} />
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600">
-          <CreditCard size={20} />
-        </div>
-        <div className="flex flex-col justify-center">
-          <span className="text-[18px] font-black text-slate-900 leading-none">Tradevu Pay</span>
-        </div>
-      </div>
-
-      {/* Time Filter */}
-      <div className="flex bg-slate-100 p-1 rounded-lg self-start mb-6">
-        <button 
-          onClick={() => setTimeFilter('week')}
-          className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${timeFilter === 'week' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          This Week
-        </button>
-        <button 
-          onClick={() => setTimeFilter('month')}
-          className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${timeFilter === 'month' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          This Month
-        </button>
-      </div>
-
-      {/* Main metric */}
-      <div className="mb-6">
-        <div className="text-[12px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Conversations</div>
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-[32px] font-black text-slate-900 leading-none">{metric.conversations}</span>
-          <span className="text-[18px] font-bold text-slate-300">/ {metric.weeklyGoal}</span>
-        </div>
-        <div className="progress-track h-2 bg-slate-100">
-          <div className="progress-fill h-full bg-[#7C3AED]" style={{ width: `${progress}%` }} />
-        </div>
-      </div>
-
-      <div className="mt-auto space-y-6 pt-4 border-t border-slate-50">
-        {/* Transfers */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-baseline">
-            <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">LCY transfers</span>
-            <span className="text-[18px] font-black text-slate-900">
-              {metric.lcyTransfers} <span className="text-[14px] font-bold text-slate-300">/ {metric.lcyGoal}</span>
-            </span>
+    <div className="bg-white border border-[#E2E8F0] rounded-[24px] p-6 shadow-sm flex flex-col relative group h-full justify-between">
+      {/* Header with inline dropdown */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-[#7C3AED] shrink-0">
+            <CreditCard size={20} />
           </div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">FCY transfers</span>
-            <span className="text-[18px] font-black text-slate-900">
-              {metric.fcyTransfers} <span className="text-[14px] font-bold text-slate-300">/ {metric.fcyGoal}</span>
-            </span>
-          </div>
+          <span className="text-[14px] font-black text-slate-900 leading-none whitespace-nowrap">Tradevu Pay</span>
         </div>
 
-        {/* Conversion rate */}
-        <div>
-          <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Conversation → Conversion Rate</div>
-          <div className="text-[28px] font-black text-primary leading-none">{conversionRate}%</div>
+        <div className="relative">
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-600 transition-all focus:outline-none whitespace-nowrap shrink-0"
+          >
+            <span>{timeFilter === 'week' ? 'This week' : 'This month'}</span>
+            <ChevronDown size={14} className="text-slate-400" />
+          </button>
+          
+          {isDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+              <div className="absolute right-0 mt-1.5 w-32 bg-white border border-slate-100 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => {
+                    setTimeFilter('week');
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-[11px] font-black uppercase transition-colors ${timeFilter === 'week' ? 'bg-[#F5F3FF] text-[#7C3AED]' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  This week
+                </button>
+                <button
+                  onClick={() => {
+                    setTimeFilter('month');
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-[11px] font-black uppercase transition-colors ${timeFilter === 'month' ? 'bg-[#F5F3FF] text-[#7C3AED]' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  This month
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Conversations Section */}
+      <div className="mb-5">
+        <div className="text-[13px] font-medium text-[#64748B] mb-2">Conversations</div>
+        <div className="flex items-baseline gap-1.5 mb-3.5">
+          <span className="text-[26px] font-semibold text-black leading-none">{activeMetric.conversations}</span>
+          <span className="text-[16px] font-medium text-[#94A3B8]">/ {activeMetric.weeklyGoal}</span>
+        </div>
+        <div className="h-[6px] bg-[#F1F5F9] rounded-full overflow-hidden">
+          <div className="h-full bg-[#7C3AED] rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[#F1F5F9] my-1" />
+
+      {/* Transfers breakdown list layout matching mockup */}
+      <div className="py-4 space-y-3.5">
+        <div className="flex justify-between items-center text-[13px] font-medium">
+          <span className="text-[#64748B]">LCY transfers</span>
+          <div className="flex items-baseline gap-1 font-semibold">
+            <span className="text-black">{activeMetric.lcyTransfers}</span>
+            <span className="text-[#94A3B8] font-medium">/ {activeMetric.lcyGoal}</span>
+          </div>
+        </div>
+        <div className="flex justify-between items-center text-[13px] font-medium">
+          <span className="text-[#64748B]">FCY transfers</span>
+          <div className="flex items-baseline gap-1 font-semibold">
+            <span className="text-black">{activeMetric.fcyTransfers}</span>
+            <span className="text-[#94A3B8] font-medium">/ {activeMetric.fcyGoal}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[#F1F5F9] my-1" />
+
+      {/* Conversion Rate at the bottom */}
+      <div className="pt-4">
+        <div className="text-[13px] font-medium text-[#64748B] mb-2">Conversion Rate</div>
+        <div className="text-[26px] font-semibold text-[#7C3AED] leading-none">
+          {conversionRate.toFixed(1)}%
         </div>
       </div>
     </div>

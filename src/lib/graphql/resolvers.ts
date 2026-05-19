@@ -196,20 +196,48 @@ export const resolvers = {
       const supabase = await createClient();
       
       // Update projects
-      if (projects && projects.length > 0) {
-        // Simple strategy: deactivate all then insert new ones or update existing
-        // For simplicity here, we'll assume we update existing ones by ID
-        for (const p of projects) {
+      if (projects) {
+        // 1. Get the list of all IDs sent by the client that are valid UUIDs
+        const incomingIds = projects
+          .map(p => p.id)
+          .filter(id => id && id.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/));
+
+        // 2. Delete any projects in the database that are NOT in the incoming IDs
+        if (incomingIds.length > 0) {
           await supabase
             .from('engineering_projects')
-            .update({
-              name: p.title,
-              status: p.status,
-              date_label: p.dateLabel,
-              date_value: p.dateValue,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', p.id);
+            .delete()
+            .not('id', 'in', `(${incomingIds.join(',')})`);
+        } else {
+          await supabase
+            .from('engineering_projects')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+
+        // 3. Insert or update projects
+        for (const p of projects) {
+          const isNew = !p.id || !p.id.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
+          
+          const row: any = {
+            name: p.title,
+            status: p.status,
+            date_label: p.dateLabel,
+            date_value: p.dateValue,
+            description: p.description || '',
+            completion_percentage: p.progress || 0,
+            impact_score: p.impactScore || 0,
+            updated_at: new Date().toISOString()
+          };
+
+          if (isNew) {
+            await supabase.from('engineering_projects').insert(row);
+          } else {
+            await supabase
+              .from('engineering_projects')
+              .update(row)
+              .eq('id', p.id);
+          }
         }
       }
 

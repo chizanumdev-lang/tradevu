@@ -53,7 +53,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
 
       {/* Header Row */}
       <div className="flex justify-between items-center mb-10">
-        <div className="text-[12px] font-bold text-[#94A3B8] uppercase tracking-[0.08em]">
+        <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.08em] whitespace-nowrap">
           QUARTERLY TARGETS
         </div>
         

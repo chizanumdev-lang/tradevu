@@ -123,6 +123,7 @@ export interface EngineeringProject {
   dateLabel: string;
   dateValue: string;
   progress?: number;
+  impactScore?: number;
   eta?: string;
 }
 

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client';
+
+import React from 'react';
 import { TrendingUp } from 'lucide-react';
 
 interface CustomerCardProps {
@@ -14,56 +16,53 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({
   activeMonthly, 
   trend,
 }) => {
-  const [filter, setFilter] = useState<'all' | 'mom'>('all');
   const progress = Math.min(Math.round((total / goal) * 100), 100);
 
   return (
-    <div className="card h-full flex flex-col relative group">
-      <div className="flex justify-between items-center mb-8">
-        <div className="section-label uppercase tracking-widest text-[12px] font-bold text-slate-400">Customers</div>
-        <div className="flex bg-slate-100 p-1 rounded-lg">
-          <button 
-            onClick={() => setFilter('all')}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${filter === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            All
-          </button>
-          <button 
-            onClick={() => setFilter('mom')}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${filter === 'mom' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            MoM
-          </button>
-        </div>
+    <div className="bg-white border border-[#E2E8F0] rounded-[24px] p-6 shadow-sm flex flex-col relative group h-full justify-between">
+      {/* Header Label */}
+      <div className="mb-6">
+        <span className="text-[13px] font-semibold text-[#64748B] tracking-wider uppercase">
+          CUSTOMERS
+        </span>
       </div>
 
-      <div className="mb-10">
-        <div className="text-[12px] font-bold text-slate-400 mb-2 uppercase tracking-wider">
-          {filter === 'mom' ? 'Monthly Growth' : 'Total Customers'}
+      {/* Total Customers Section */}
+      <div className="mb-6">
+        <div className="text-[13px] font-medium text-[#64748B] mb-2">
+          Total Customers
         </div>
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-[32px] font-black text-slate-900 leading-none">
-            {filter === 'mom' ? `+${trend}%` : total.toLocaleString()}
+        <div className="flex items-baseline gap-1.5 mb-3.5">
+          <span className="text-[26px] font-semibold text-black leading-none">
+            {total.toLocaleString()}
           </span>
-          {filter === 'all' && (
-            <span className="text-[20px] font-bold text-slate-300">/ {goal.toLocaleString()}</span>
-          )}
+          <span className="text-[16px] font-medium text-[#94A3B8]">/ {goal.toLocaleString()}</span>
         </div>
-        <div className="progress-track h-2 bg-slate-100">
-          <div className="progress-fill h-full bg-[#7C3AED]" style={{ width: filter === 'mom' ? `${Math.min(trend, 100)}%` : `${progress}%` }} />
+        <div className="h-[6px] bg-[#F1F5F9] rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-[#7C3AED] rounded-full transition-all duration-1000" 
+            style={{ width: `${progress}%` }} 
+          />
         </div>
       </div>
 
-      <div className="mt-auto pt-8 border-t border-slate-50">
-        <div className="text-[12px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Monthly Active Customers</div>
-        <div className="flex items-end justify-between">
-          <span className="text-[32px] font-black text-slate-900 leading-none">{activeMonthly.toLocaleString()}</span>
-          {filter === 'all' && (
-            <div className="flex items-center gap-1 text-[13px] font-bold text-mint-dark mb-1">
-              <TrendingUp size={16} />
-              +{trend}% vs last mo
-            </div>
-          )}
+      {/* Divider */}
+      <div className="border-t border-[#F1F5F9] my-1" />
+
+      {/* Monthly Active Customers Section */}
+      <div className="pt-4">
+        <div className="text-[13px] font-medium text-[#64748B] mb-2">
+          Monthly Active Customers
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[26px] font-semibold text-black leading-none">
+            {activeMonthly.toLocaleString()}
+          </span>
+          <div className="flex items-center gap-1 text-[13px] whitespace-nowrap shrink-0">
+            <TrendingUp size={16} className="text-[#10B981] shrink-0" strokeWidth={2.5} />
+            <span className="text-[#10B981] font-semibold">+{trend}%</span>
+            <span className="text-[#64748B]">vs last mo</span>
+          </div>
         </div>
       </div>
     </div>

@@ -367,7 +367,7 @@ export async function fetchEngineering(
   const [projectsRes, healthRes] = await Promise.all([
     supabase
       .from('engineering_projects')
-      .select('id, name, status, date_label, date_value')
+      .select('id, name, status, date_label, date_value, description, completion_percentage, impact_score')
       .eq('is_active', true)
       .order('sort_order', { ascending: true }),
     supabase
@@ -381,8 +381,8 @@ export async function fetchEngineering(
     console.warn('engineering:', projectsRes.error?.message || healthRes.error?.message);
     return {
       projects: [
-        { id: '1', title: 'USD wallets & transfers', name: 'USD wallets & transfers', status: 'Live', dateLabel: 'Deployed', dateValue: 'May 2026', progress: 0, eta: 'May 2026', description: '' },
-        { id: '2', title: 'Pay Partner Dashboard', name: 'Pay Partner Dashboard', status: 'In Development', dateLabel: 'Target', dateValue: 'May 2026', progress: 0, eta: 'May 2026', description: '' }
+        { id: '1', title: 'USD wallets & transfers', name: 'USD wallets & transfers', status: 'Live', dateLabel: 'Deployed', dateValue: 'May 2026', progress: 100, impactScore: 90, eta: 'May 2026', description: 'Deployment of multi-currency stablecoin and USD wallet gateways' },
+        { id: '2', title: 'Pay Partner Dashboard', name: 'Pay Partner Dashboard', status: 'In Development', dateLabel: 'Target', dateValue: 'May 2026', progress: 45, impactScore: 80, eta: 'May 2026', description: 'Onboarding console and metrics interface for Pay service partners' }
       ],
       health: [
         { label: 'Transaction Success', value: '98.2%', isGood: true },
@@ -395,12 +395,13 @@ export async function fetchEngineering(
     projects: ((projectsRes.data as any) ?? []).map((p: any) => ({
       id: p.id,
       title: p.name,
-      description: (p as any).description || '',
+      description: p.description || '',
       name: p.name,
       status: p.status as 'Live' | 'In Development' | 'Testing',
       dateLabel: p.date_label,
       dateValue: p.date_value,
-      progress: 0,
+      progress: p.completion_percentage || 0,
+      impactScore: p.impact_score || 0,
       eta: p.date_value,
     })),
     health: (healthRes.data ?? []).map((h) => ({

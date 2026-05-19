@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, CheckCircle2, Clock, Edit2, AlertCircle } from 'lucide-react';
+import { Terminal, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 interface Project {
   title: string;
@@ -26,8 +26,6 @@ interface EngineeringCardProps {
 export const EngineeringCard: React.FC<EngineeringCardProps> = ({
   projects,
   health,
-  editMode,
-  onEdit,
   scrollSpeed = 8,
   scrollEnabled = true
 }) => {
@@ -73,61 +71,55 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
 
   return (
     <div className="card h-full flex flex-col relative group">
-      {editMode && onEdit && (
-        <button
-          onClick={onEdit}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
-        >
-          <Edit2 size={14} />
-        </button>
-      )}
-
-      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#7C3AED] flex items-center justify-center">
           <Terminal size={20} />
         </div>
-        <span className="text-[18px] font-black text-slate-900 leading-none">Engineering</span>
+        <span className="text-[14px] font-black text-slate-900 leading-none whitespace-nowrap">Engineering</span>
       </div>
 
       {/* Project statuses */}
       <div
         ref={scrollRef}
-        className="space-y-6 flex-1 max-h-[240px] overflow-y-auto no-scrollbar"
+        className="space-y-5 flex-1 max-h-[220px] overflow-y-auto no-scrollbar"
       >
         {projects.map((project, idx) => (
-          <div key={idx} className="flex justify-between items-start pt-4 border-t border-slate-50 first:border-t-0 first:pt-0">
-            <div className="space-y-2">
-              <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{project.title}</div>
-              <div className="flex items-center gap-2 text-[14px] font-bold text-slate-900">
+          <div key={idx} className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-b-0">
+            <div className="space-y-1">
+              <div className="text-[12px] font-extrabold text-slate-800 tracking-tight leading-tight">{project.title}</div>
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
                 {project.status === 'Live' ? (
-                  <CheckCircle2 size={16} className="text-mint-dark" />
+                  <CheckCircle2 size={13} className="text-emerald-500" strokeWidth={3} />
                 ) : project.status === 'Blocked' ? (
-                  <AlertCircle size={16} className="text-rose-500" />
+                  <AlertCircle size={13} className="text-rose-500" strokeWidth={3} />
                 ) : (
-                  <Clock size={16} className="text-amber-500" />
+                  <Clock size={13} className="text-amber-500" strokeWidth={3} />
                 )}
-                <span>{project.status}</span>
+                <span className={
+                  project.status === 'Live' ? 'text-emerald-500' :
+                  project.status === 'Blocked' ? 'text-rose-500' :
+                  'text-amber-500'
+                }>{project.status}</span>
               </div>
             </div>
-            <div className="text-right space-y-1">
-              <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+            <div className="text-right space-y-0.5">
+              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">
                 {project.dateLabel}
               </div>
-              <div className="text-[13px] font-bold text-slate-500">{project.dateValue}</div>
+              <div className="text-[12px] font-extrabold text-slate-500 leading-none mt-1">{project.dateValue}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* System Health */}
-      <div className="mt-auto pt-6 border-t border-slate-50">
-        <div className="section-label mb-5 uppercase tracking-widest text-[11px] font-black text-slate-400">System Health</div>
+      <div className="mt-auto pt-6 border-t border-slate-100">
+        <div className="mb-4 uppercase tracking-widest text-[10px] font-bold text-slate-400 whitespace-nowrap">System Health</div>
         <div className="space-y-4">
           {health.map((item) => (
-            <div key={item.label} className="flex justify-between items-baseline">
-              <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-              <span className={`text-[18px] font-black ${item.isGood ? 'text-mint-dark' : 'text-slate-900'}`}>
+            <div key={item.label} className="flex justify-between items-baseline py-0.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{item.label}</span>
+              <span className={`text-[16px] font-black ${item.isGood ? 'text-emerald-500' : 'text-slate-900'}`}>
                 {item.value}
               </span>
             </div>
@@ -137,3 +129,4 @@ export const EngineeringCard: React.FC<EngineeringCardProps> = ({
     </div>
   );
 };
+

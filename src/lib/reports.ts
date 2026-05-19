@@ -1,16 +1,25 @@
 import { createClient } from '@/utils/supabase/server';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-export async function generateReport(module: 'all' | 'finance' | 'sales' | 'pay' | 'engineering' | 'customers' | 'revenue' | 'launch') {
+export async function generateReport(
+  module: 'all' | 'finance' | 'sales' | 'pay' | 'engineering' | 'customers' | 'revenue' | 'launch',
+  startDate?: string,
+  endDate?: string
+) {
   const supabase = await createClient();
 
   const reportData: Record<string, any> = {
     generatedAt: new Date().toISOString(),
-    module
+    module,
+    filters: { startDate, endDate }
   };
 
   if (module === 'all' || module === 'finance') {
-    const { data: metrics } = await supabase.from('finance_metrics').select('*').order('recorded_at', { ascending: false });
+    let query = supabase.from('finance_metrics').select('*').order('recorded_at', { ascending: false });
+    if (startDate) query = query.gte('recorded_at', startDate);
+    if (endDate) query = query.lte('recorded_at', endDate);
+    
+    const { data: metrics } = await query;
     
     // Calculate historical totals
     let totalUsd = 0;
@@ -37,12 +46,20 @@ export async function generateReport(module: 'all' | 'finance' | 'sales' | 'pay'
   }
 
   if (module === 'all' || module === 'sales') {
-    const { data: sales } = await supabase.from('sales_marketing').select('*').order('recorded_at', { ascending: false });
+    let query = supabase.from('sales_marketing').select('*').order('recorded_at', { ascending: false });
+    if (startDate) query = query.gte('recorded_at', startDate);
+    if (endDate) query = query.lte('recorded_at', endDate);
+    
+    const { data: sales } = await query;
     reportData.sales = sales;
   }
 
   if (module === 'all' || module === 'pay') {
-    const { data: pay } = await supabase.from('pay_metrics').select('*').order('recorded_at', { ascending: false });
+    let query = supabase.from('pay_metrics').select('*').order('recorded_at', { ascending: false });
+    if (startDate) query = query.gte('recorded_at', startDate);
+    if (endDate) query = query.lte('recorded_at', endDate);
+    
+    const { data: pay } = await query;
     reportData.pay = pay;
   }
 

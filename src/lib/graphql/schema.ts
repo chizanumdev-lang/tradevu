@@ -95,6 +95,7 @@ export const typeDefs = gql`
     dateLabel: String!
     dateValue: String!
     progress: Int
+    impactScore: Int
     eta: String
   }
 
@@ -169,6 +170,8 @@ export const typeDefs = gql`
     status: String!
     dateLabel: String!
     dateValue: String!
+    progress: Int
+    impactScore: Int
   }
 
   input EngineeringHealthMetricInput {

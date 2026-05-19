@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Printer, ChevronLeft, TrendingUp, Users, DollarSign, Zap, Activity } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, ComposedChart, Area,
@@ -50,12 +50,67 @@ export default function ReportsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'trends' | 'correlations' | 'engineering'>('trends');
+  const [dateFilter, setDateFilter] = useState<'7d' | '30d' | 'all'>('all');
+  const [selectedWeek, setSelectedWeek] = useState<string>('all');
+
+  // Dynamically calculate the last 8 calendar weeks ending today
+  const recentWeeks = useMemo(() => {
+    const weeks = [];
+    const current = new Date();
+    
+    // Find the previous Monday
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(current.setDate(diff));
+    
+    const getISOWeek = (date: Date) => {
+      const tempDate = new Date(date.valueOf());
+      tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+      const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+      return Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    };
+
+    for (let i = 0; i < 8; i++) {
+      const start = new Date(monday);
+      start.setDate(monday.getDate() - (i * 7));
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      
+      const label = `Week ${getISOWeek(start)} (${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+      
+      weeks.push({
+        id: `${start.toISOString()}_${end.toISOString()}`,
+        label,
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      });
+    }
+    return weeks;
+  }, []);
 
   useEffect(() => {
-    fetch('/api/reports?module=all')
+    setLoading(true);
+    let url = '/api/reports?module=all';
+    
+    if (selectedWeek !== 'all') {
+      const [start, end] = selectedWeek.split('_');
+      url += `&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
+    }
+    
+    fetch(url)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); });
-  }, []);
+      .then(d => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching weekly reports:', err);
+        setLoading(false);
+      });
+  }, [selectedWeek]);
 
   if (loading) {
     return (
@@ -100,19 +155,39 @@ export default function ReportsPage() {
     if (!d) return;
     if (!timeMap.has(d)) timeMap.set(d, { date: d });
     const entry = timeMap.get(d);
-    entry.payConversions = p.users_converted || 0;
-    entry.payGoal = p.weekly_goal || 0;
-    entry.lcyTransfers = p.lcy_transfers || 0;
-    entry.fcyTransfers = p.fcy_transfers || 0;
+    entry.payConversions = (entry.payConversions || 0) + (p.users_converted || 0);
+    entry.payGoal = (entry.payGoal || 0) + (p.weekly_goal || 0);
+    entry.lcyTransfers = (entry.lcyTransfers || 0) + (p.lcy_transfers || 0);
+    entry.fcyTransfers = (entry.fcyTransfers || 0) + (p.fcy_transfers || 0);
   });
 
-  const timeSeries = Array.from(timeMap.values())
+  const rawTimeSeries = Array.from(timeMap.values())
     .sort((a, b) => a.date.localeCompare(b.date))
     .map(d => ({
       ...d,
       label: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       convRate: d.leads > 0 ? +((d.conversions / d.leads) * 100).toFixed(1) : 0,
     }));
+
+  // Dynamically filter timeSeries based on selected date range
+  const timeSeries = useMemo(() => {
+    if (dateFilter === 'all') return rawTimeSeries;
+
+    const cutoffDate = new Date();
+    if (dateFilter === '7d') {
+      cutoffDate.setDate(cutoffDate.getDate() - 7);
+    } else if (dateFilter === '30d') {
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+    }
+
+    // Set boundary to start of target day
+    cutoffDate.setHours(0, 0, 0, 0);
+
+    return rawTimeSeries.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= cutoffDate;
+    });
+  }, [rawTimeSeries, dateFilter]);
 
   // ── Correlation scatter data: Sales leads vs Loan value ─────────────
   const correlationData = timeSeries.filter(d => d.leads && d.loanValueUsd).map(d => ({
@@ -132,8 +207,8 @@ export default function ReportsPage() {
   // ── Engineering projects ─────────────────────────────────────────────
   const engProjects = (data.engineering?.projects || []).map((p: any) => ({
     name: p.name?.length > 18 ? p.name.slice(0, 18) + '…' : (p.name || 'Project'),
-    completion: p.completion_percentage || p.completion || 0,
-    impact: p.impact_score || Math.floor(Math.random() * 50) + 50,
+    completion: p.progress !== undefined ? p.progress : (p.completion_percentage || p.completion || 0),
+    impact: p.impactScore !== undefined ? p.impactScore : (p.impact_score || 0),
   }));
 
   // ── Summary KPIs ─────────────────────────────────────────────────────
@@ -164,9 +239,40 @@ export default function ReportsPage() {
               <p className="text-xs text-slate-400 font-bold mt-0.5">Generated {new Date(data.generatedAt).toLocaleString()}</p>
             </div>
           </div>
-          <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors">
-            <Printer size={16} /> Export PDF
-          </button>
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right w-24">Database Week:</span>
+                <select
+                  id="weekFilterSelect"
+                  value={selectedWeek}
+                  onChange={(e: any) => setSelectedWeek(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-400 transition-colors cursor-pointer w-48"
+                >
+                  <option value="all">All Time Data</option>
+                  {recentWeeks.map(w => (
+                    <option key={w.id} value={w.id}>{w.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right w-24">Display Period:</span>
+                <select
+                  id="dateFilterSelect"
+                  value={dateFilter}
+                  onChange={(e: any) => setDateFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-400 transition-colors cursor-pointer w-48"
+                >
+                  <option value="all">Full Range</option>
+                  <option value="30d">Last 30 Days</option>
+                  <option value="7d">Last 7 Days</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors h-fit self-center">
+              <Printer size={16} /> Export PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -221,7 +327,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={v => `$${(v/1000).toFixed(0)}K`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => `$${Number(v).toLocaleString()}`} />
                     <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
@@ -245,7 +351,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} />
@@ -265,7 +371,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={payAttainment}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => `${v}%`} />
                     <ReferenceLine y={100} stroke={COLORS.rose} strokeDasharray="4 4" strokeWidth={2} label={{ value: 'Target 100%', position: 'right', fontSize: 10, fill: COLORS.rose, fontWeight: 700 }} />
@@ -307,7 +413,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={v => `$${(v/1000).toFixed(0)}K`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => `$${Number(v).toLocaleString()}`} />
                     <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
@@ -327,7 +433,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} />
@@ -383,7 +489,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={4} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />

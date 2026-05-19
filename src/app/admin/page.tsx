@@ -5,7 +5,7 @@ import {
   Users, RefreshCcw, Lock, LogOut, TrendingUp, 
   Activity, Layers, CreditCard, LayoutDashboard,
   ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
-  DollarSign, Edit3, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, Landmark
+  DollarSign, Edit3, Edit2, ChevronDown, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, Landmark
 } from 'lucide-react';
 import Image from 'next/image';
 import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
@@ -74,6 +74,7 @@ export default function AdminPage() {
   const [passwordChangeForm, setPasswordChangeForm] = useState({ newPassword: '', confirmPassword: '' });
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
   const [editingUserEmail, setEditingUserEmail] = useState<string | null>(null);
+  const [isRatesCollapsed, setIsRatesCollapsed] = useState(true);
 
 
   const hasPermission = (permission: string) => {
@@ -435,7 +436,9 @@ export default function AdminPage() {
             description: p.description || '',
             status: p.status,
             dateLabel: p.dateLabel,
-            dateValue: p.dateValue
+            dateValue: p.dateValue,
+            progress: Number(p.progress) || 0,
+            impactScore: Number(p.impactScore) || 0
           })),
           health: metrics.engineering.health.map(h => ({
             label: h.label,
@@ -684,7 +687,7 @@ export default function AdminPage() {
       </nav>
 
       {/* ── Main Mirror View ───────────────────────────────────────────── */}
-      <main className="max-w-[1440px] mx-auto px-10 pt-28 pb-20 relative">
+      <main className="max-w-[1680px] mx-auto px-6 pt-28 pb-20 relative">
         {message && (
           <div className={`fixed top-20 right-10 z-[110] px-6 py-4 rounded-2xl border shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300 flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'}`}>
             {message.type === 'success' ? <CheckCircle2 size={18} /> : <Activity size={18} />}
@@ -717,78 +720,112 @@ export default function AdminPage() {
 
         {/* ── Mirror Grid ─────────────────────── */}
         {metrics && (
-          <div className="grid grid-cols-12 gap-6">
+          <div className="scoreboard-wrap bg-white/50 backdrop-blur-sm shadow-sm">
+            <div className="grid grid-cols-12 gap-4">
 
-            {/* ── Top Row (3 cards, each 4 cols) ── */}
-            <div className="col-span-12 md:col-span-4">
-              <RevenueRing
-                goal={metrics.revenueAnnual.goal}
-                current={metrics.revenueAnnual.current}
-                percentage={metrics.revenueAnnual.percentage}
-                editMode={editMode && canEdit('revenue')}
-                onEdit={() => handleOpenEdit('revenue')}
-              />
+              {/* ── Top Row (3 cards, each 4 cols) ── */}
+              <div className="col-span-12 md:col-span-4 relative group">
+                <RevenueRing
+                  goal={metrics.revenueAnnual.goal}
+                  current={metrics.revenueAnnual.current}
+                  percentage={metrics.revenueAnnual.percentage}
+                  editMode={editMode && canEdit('revenue')}
+                  onEdit={() => handleOpenEdit('revenue')}
+                />
+              </div>
+
+              <div className="col-span-12 md:col-span-4 relative group">
+                <CustomerCard
+                  total={metrics.customersMonthly.current}
+                  goal={metrics.customersMonthly.goal}
+                  activeMonthly={metrics.customersMonthly.activeMonthly}
+                  trend={metrics.customersMonthly.percentageChange}
+                />
+                {editMode && (
+                  <button 
+                    onClick={() => handleOpenEdit('customers')}
+                    className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="col-span-12 md:col-span-4 relative group">
+                 <LaunchStatus
+                  current={metrics.launchStatus}
+                  history={metrics.launchHistory}
+                  editMode={editMode && canEdit('launch')}
+                  onEdit={(dept) => handleOpenEdit('launch', dept)}
+                  userRole={currentUser?.role}
+                  userEmail={currentUser?.email}
+                  departments={metrics.settings.departments}
+                />
+              </div>
+
+
+              {/* ── Bottom Row (4 cards, each 3 cols) ── */}
+              <div className="col-span-12 md:col-span-3 relative group">
+                <SalesCard
+                  metrics={metrics.salesMarketing}
+                  userRole={currentUser?.role}
+                />
+                {editMode && (canEdit('marketing') || currentUser?.role === 'CEO') && (
+                  <button 
+                    onClick={() => handleOpenEdit('sales')}
+                    className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="col-span-12 md:col-span-3 relative group">
+                <PayCard
+                  data={metrics.pay}
+                />
+                {editMode && canEdit('pay') && (
+                  <button 
+                    onClick={() => handleOpenEdit('pay')}
+                    className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="col-span-12 md:col-span-3 relative group">
+                <FinanceCard 
+                  data={metrics.finance}
+                />
+                {editMode && canEdit('finance') && (
+                  <button 
+                    onClick={() => handleOpenEdit('finance')}
+                    className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="col-span-12 md:col-span-3 relative group">
+                <EngineeringCard
+                  projects={metrics.engineering.projects}
+                  health={metrics.engineering.health}
+                  scrollSpeed={metrics.settings.scrollSpeed}
+                  scrollEnabled={metrics.settings.scrollEnabled}
+                />
+                {editMode && canEdit('engineering') && (
+                  <button 
+                    onClick={() => handleOpenEdit('engineering')}
+                    className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
+
             </div>
-
-            <div className="col-span-12 md:col-span-4">
-              <CustomerCard
-                total={metrics.customersMonthly.current}
-                goal={metrics.customersMonthly.goal}
-                activeMonthly={metrics.customersMonthly.activeMonthly}
-                trend={metrics.customersMonthly.percentageChange}
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-4">
-               <LaunchStatus
-                current={metrics.launchStatus}
-                history={metrics.launchHistory}
-                editMode={editMode && canEdit('launch')}
-                onEdit={(dept) => handleOpenEdit('launch', dept)}
-                userRole={currentUser?.role}
-                userEmail={currentUser?.email}
-                departments={metrics.settings.departments}
-              />
-            </div>
-
-
-            {/* ── Bottom Row (4 cards, each 3 cols) ── */}
-            <div className="col-span-12 md:col-span-3">
-              <SalesCard
-                metrics={metrics.salesMarketing}
-                userRole={currentUser?.role}
-                editMode={editMode && (canEdit('marketing') || currentUser?.role === 'CEO')}
-                onEdit={() => handleOpenEdit('sales')}
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-3">
-              <PayCard
-                data={metrics.pay}
-                editMode={editMode && canEdit('pay')}
-                onEdit={() => handleOpenEdit('pay')}
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-3">
-              <FinanceCard 
-                data={metrics.finance}
-                editMode={editMode && canEdit('finance')}
-                onEdit={() => handleOpenEdit('finance')}
-              />
-            </div>
-
-            <div className="col-span-12 md:col-span-3">
-              <EngineeringCard
-                projects={metrics.engineering.projects}
-                health={metrics.engineering.health}
-                scrollSpeed={metrics.settings.scrollSpeed}
-                scrollEnabled={metrics.settings.scrollEnabled}
-                editMode={editMode && canEdit('engineering')}
-                onEdit={() => handleOpenEdit('engineering')}
-              />
-            </div>
-
           </div>
         )}
       </main>
@@ -826,32 +863,60 @@ export default function AdminPage() {
                 )}
 
                 {editingSection === 'sales' && (
-                  <div className="space-y-6">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marketing Data Entries</p>
-                    {metrics.salesMarketing.map((m, i) => (
-                      <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-black text-slate-900 uppercase">{m.touchpoint} ({m.period})</span>
+                  <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {['week', 'month'].map(period => (
+                      <div key={period} className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-4 bg-purple-600 rounded-full" />
+                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
+                            {period === 'week' ? 'Weekly' : 'Monthly'} Sales Touchpoints
+                          </h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <InputGroup 
-                            label="Leads" 
-                            value={m.leadsGenerated} 
-                            onChange={(v) => {
+                        <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                          {['Website', 'X', 'LinkedIn'].map(touchpoint => {
+                            const idx = metrics.salesMarketing.findIndex(m => m.period === period && m.touchpoint === touchpoint);
+                            const metric = metrics.salesMarketing[idx] || { leadsGenerated: 0, conversions: 0 };
+                            
+                            const updateVal = (field: 'leadsGenerated' | 'conversions', val: number) => {
                               const updated = [...metrics.salesMarketing];
-                              updated[i] = { ...updated[i], leadsGenerated: Number(v) };
-                              setMetrics({...metrics, salesMarketing: updated});
-                            }} 
-                          />
-                          <InputGroup 
-                            label="Conversions" 
-                            value={m.conversions} 
-                            onChange={(v) => {
-                              const updated = [...metrics.salesMarketing];
-                              updated[i] = { ...updated[i], conversions: Number(v) };
-                              setMetrics({...metrics, salesMarketing: updated});
-                            }} 
-                          />
+                              if (idx > -1) {
+                                updated[idx] = { ...updated[idx], [field]: val };
+                              } else {
+                                updated.push({
+                                  period: period as any,
+                                  touchpoint: touchpoint as any,
+                                  leadsGenerated: field === 'leadsGenerated' ? val : 0,
+                                  conversions: field === 'conversions' ? val : 0
+                                });
+                              }
+                              setMetrics({ ...metrics, salesMarketing: updated });
+                            };
+
+                            const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+
+                            return (
+                              <div key={touchpoint} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                                  {touchpoint === 'X' ? 'X (Twitter)' : touchpoint}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <InputGroup 
+                                    label="Target (Leads)" 
+                                    value={metric.leadsGenerated} 
+                                    onChange={(v) => updateVal('leadsGenerated', Number(v))}
+                                    disabled={!isCeoOrPm}
+                                    isTarget={true}
+                                  />
+                                  <InputGroup 
+                                    label="Actual (Conversions)" 
+                                    value={metric.conversions} 
+                                    onChange={(v) => updateVal('conversions', Number(v))}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -869,40 +934,88 @@ export default function AdminPage() {
                           </h3>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
-                          <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            {(() => {
-                              const metric = metrics.pay.metrics.find(m => m.period === period) || {
-                                period, weeklyGoal: 0, conversations: 0, usersConverted: 0, lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0
-                              };
-                              const updatePayMetric = (field: string, val: number) => {
-                                const newMetrics = [...metrics.pay.metrics];
-                                const idx = newMetrics.findIndex(m => m.period === period);
-                                if (idx > -1) {
-                                  newMetrics[idx] = { ...newMetrics[idx], [field]: val };
-                                } else {
-                                  newMetrics.push({ 
-                                    period: period as any, weeklyGoal: 0, conversations: 0, usersConverted: 0, 
-                                    lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0, [field]: val 
-                                  });
-                                }
-                                setMetrics({ ...metrics, pay: { ...metrics.pay, metrics: newMetrics } });
-                              };
+                        <div className="space-y-6 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                          {(() => {
+                            const metric = metrics.pay.metrics.find(m => m.period === period) || {
+                              period, weeklyGoal: 0, conversations: 0, usersConverted: 0, lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0
+                            };
+                            const updatePayMetric = (field: string, val: number) => {
+                              const newMetrics = [...metrics.pay.metrics];
+                              const idx = newMetrics.findIndex(m => m.period === period);
+                              if (idx > -1) {
+                                newMetrics[idx] = { ...newMetrics[idx], [field]: val };
+                              } else {
+                                newMetrics.push({ 
+                                  period: period as any, weeklyGoal: 0, conversations: 0, usersConverted: 0, 
+                                  lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0, [field]: val 
+                                });
+                              }
+                              setMetrics({ ...metrics, pay: { ...metrics.pay, metrics: newMetrics } });
+                            };
 
-                              return (
-                                <>
-                                  <InputGroup label="Conversations Goal" value={metric.weeklyGoal} onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} disabled={currentUser?.role !== 'CEO'} />
-                                  <InputGroup label="Total Conversations" value={metric.conversations} onChange={(v) => updatePayMetric('conversations', Number(v))} />
-                                  <InputGroup label="Users Converted" value={metric.usersConverted} onChange={(v) => updatePayMetric('usersConverted', Number(v))} />
-                                  <InputGroup label="LCY Transfers" value={metric.lcyTransfers} onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} />
-                                  <InputGroup label="LCY Goal" value={metric.lcyGoal} onChange={(v) => updatePayMetric('lcyGoal', Number(v))} />
-                                  <div className="hidden md:block" />
-                                  <InputGroup label="FCY Transfers" value={metric.fcyTransfers} onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} />
-                                  <InputGroup label="FCY Goal" value={metric.fcyGoal} onChange={(v) => updatePayMetric('fcyGoal', Number(v))} />
-                                </>
-                              );
-                            })()}
-                          </div>
+                            const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+
+                            return (
+                              <div className="space-y-6">
+                                {/* Conversations: Target & Actual */}
+                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                  <InputGroup 
+                                    label="Conversations Goal (Target)" 
+                                    value={metric.weeklyGoal} 
+                                    onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} 
+                                    disabled={!isCeoOrPm} 
+                                    isTarget={true}
+                                  />
+                                  <InputGroup 
+                                    label="Total Conversations (Actual)" 
+                                    value={metric.conversations} 
+                                    onChange={(v) => updatePayMetric('conversations', Number(v))} 
+                                  />
+                                </div>
+
+                                {/* LCY: Target & Actual */}
+                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                  <InputGroup 
+                                    label="LCY Goal (Target)" 
+                                    value={metric.lcyGoal} 
+                                    onChange={(v) => updatePayMetric('lcyGoal', Number(v))} 
+                                    disabled={!isCeoOrPm}
+                                    isTarget={true}
+                                  />
+                                  <InputGroup 
+                                    label="LCY Transfers (Actual)" 
+                                    value={metric.lcyTransfers} 
+                                    onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} 
+                                  />
+                                </div>
+
+                                {/* FCY: Target & Actual */}
+                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                  <InputGroup 
+                                    label="FCY Goal (Target)" 
+                                    value={metric.fcyGoal} 
+                                    onChange={(v) => updatePayMetric('fcyGoal', Number(v))} 
+                                    disabled={!isCeoOrPm}
+                                    isTarget={true}
+                                  />
+                                  <InputGroup 
+                                    label="FCY Transfers (Actual)" 
+                                    value={metric.fcyTransfers} 
+                                    onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} 
+                                  />
+                                </div>
+
+                                {/* Additional conversions count */}
+                                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                  <InputGroup 
+                                    label="Users Converted" 
+                                    value={metric.usersConverted} 
+                                    onChange={(v) => updatePayMetric('usersConverted', Number(v))} 
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     ))}
@@ -911,31 +1024,43 @@ export default function AdminPage() {
 
                 {editingSection === 'finance' && (
                   <div className="space-y-12 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {/* Exchange Rates Section */}
-                    <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100">
-                      <div className="flex items-center gap-2 mb-6">
-                        <ArrowDownUp size={16} className="text-indigo-600" />
-                        <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Exchange Rates (vs USD)</h3>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {['NGN', 'USDT', 'USDC'].map(ccy => {
-                          const storedRate = metrics.finance.exchangeRates.find(r => r.currency === ccy)?.rateToUsd ?? 0;
-                          return (
-                            <ExchangeRateInput
-                              key={ccy}
-                              label={`${ccy} Rate`}
-                              value={storedRate}
-                              onCommit={(num) => {
-                                const newRates = [...metrics.finance.exchangeRates];
-                                const idx = newRates.findIndex(r => r.currency === ccy);
-                                if (idx > -1) newRates[idx] = { ...newRates[idx], rateToUsd: num };
-                                else newRates.push({ currency: ccy as any, rateToUsd: num });
-                                setMetrics({ ...metrics, finance: { ...metrics.finance, exchangeRates: newRates } });
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
+                    {/* Collapsible Exchange Rates Section */}
+                    <div className="p-6 bg-[#F5F3FF] rounded-3xl border border-[#EDE9FE]">
+                      <button 
+                        onClick={() => setIsRatesCollapsed(!isRatesCollapsed)}
+                        className="w-full flex items-center justify-between focus:outline-none"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ArrowDownUp size={16} className="text-[#7C3AED]" />
+                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Exchange Rates (vs USD)</h3>
+                        </div>
+                        <ChevronDown 
+                          size={18} 
+                          className={`text-slate-500 transition-transform duration-200 ${isRatesCollapsed ? '' : 'rotate-180'}`} 
+                        />
+                      </button>
+                      
+                      {!isRatesCollapsed && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 animate-in fade-in duration-200">
+                          {['NGN', 'USDT', 'USDC'].map(ccy => {
+                            const storedRate = metrics.finance.exchangeRates.find(r => r.currency === ccy)?.rateToUsd ?? 0;
+                            return (
+                              <ExchangeRateInput
+                                key={ccy}
+                                label={`${ccy === 'NGN' ? '🇳🇬' : '🪙'} ${ccy} Rate`}
+                                value={storedRate}
+                                onCommit={(num) => {
+                                  const newRates = [...metrics.finance.exchangeRates];
+                                  const idx = newRates.findIndex(r => r.currency === ccy);
+                                  if (idx > -1) newRates[idx] = { ...newRates[idx], rateToUsd: num };
+                                  else newRates.push({ currency: ccy as any, rateToUsd: num });
+                                  setMetrics({ ...metrics, finance: { ...metrics.finance, exchangeRates: newRates } });
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Metrics Section */}
@@ -969,7 +1094,10 @@ export default function AdminPage() {
 
                                     return (
                                       <div key={ccy} className="grid grid-cols-4 gap-4 items-end bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                        <div className="text-[10px] font-black text-slate-500 uppercase">{ccy}</div>
+                                        <div className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1.5">
+                                          <span>{ccy === 'USD' ? '🇺🇸' : ccy === 'NGN' ? '🇳🇬' : '🪙'}</span>
+                                          <span>{ccy}</span>
+                                        </div>
                                         <InputGroup label="Value" value={metric.loanValue} onChange={(v) => updateMetric('loanValue', Number(v))} />
                                         <InputGroup label="Count" value={metric.loanCount} onChange={(v) => updateMetric('loanCount', Number(v))} />
                                         <InputGroup label="Default %" value={metric.defaultRate} onChange={(v) => updateMetric('defaultRate', Number(v))} />
@@ -1503,7 +1631,9 @@ export default function AdminPage() {
                               status: 'In Development', 
                               dateValue: 'Q2 2026',
                               dateLabel: 'Target',
-                              description: 'Core infrastructure expansion'
+                              description: 'Core infrastructure expansion',
+                              progress: 0,
+                              impactScore: 50
                             };
                             setMetrics({...metrics, engineering: {...metrics.engineering, projects: [...metrics.engineering.projects, newProject]}});
                           }}
@@ -1515,7 +1645,7 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-4">
                         {metrics.engineering.projects.map((p, i) => (
-                          <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative group">
+                          <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4 relative group">
                             <button 
                               onClick={() => {
                                 const updated = metrics.engineering.projects.filter((_, index) => index !== i);
@@ -1526,11 +1656,16 @@ export default function AdminPage() {
                             >
                               <Trash2 size={16} />
                             </button>
-                            <div className="pr-10">
+                            <div className="pr-10 space-y-3">
                               <InputGroup label="Project Title" value={p.title || p.name || ''} onChange={(v) => {
                                 const updated = [...metrics.engineering.projects];
                                 updated[i].title = v;
                                 updated[i].name = v;
+                                setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                              }} />
+                              <InputGroup label="Project Description" value={p.description || ''} onChange={(v) => {
+                                const updated = [...metrics.engineering.projects];
+                                updated[i].description = v;
                                 setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
                               }} />
                             </div>
@@ -1563,6 +1698,24 @@ export default function AdminPage() {
                                   updated[i].dateValue = e.target.value;
                                   setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
                                 }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1" placeholder="e.g. May 2026" />
+                              </div>
+                            </div>
+                            <div className="flex gap-4">
+                              <div className="flex-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Completion Progress (%)</label>
+                                <input type="number" min="0" max="100" value={p.progress !== undefined ? p.progress : 0} onChange={(e) => {
+                                  const updated = [...metrics.engineering.projects];
+                                  updated[i].progress = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                  setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                                }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1" placeholder="e.g. 75" />
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Business Impact Score (0-100)</label>
+                                <input type="number" min="0" max="100" value={p.impactScore !== undefined ? p.impactScore : 50} onChange={(e) => {
+                                  const updated = [...metrics.engineering.projects];
+                                  updated[i].impactScore = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                  setMetrics({...metrics, engineering: {...metrics.engineering, projects: updated}});
+                                }} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold mt-1" placeholder="e.g. 90" />
                               </div>
                             </div>
                           </div>
@@ -1836,13 +1989,29 @@ export default function AdminPage() {
   );
 }
 
-function InputGroup({ label, value, onChange, type = 'text', disabled = false }: { label: string, value: string | number, onChange: (v: string) => void, type?: string, disabled?: boolean }) {
+function InputGroup({ 
+  label, 
+  value, 
+  onChange, 
+  type = 'text', 
+  disabled = false, 
+  isTarget = false 
+}: { 
+  label: string, 
+  value: string | number, 
+  onChange: (v: string) => void, 
+  type?: string, 
+  disabled?: boolean, 
+  isTarget?: boolean 
+}) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center px-1">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
         {disabled && (
-          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded">CEO ONLY</span>
+          <span className="text-[8px] font-black text-[#7C3AED] uppercase tracking-tighter bg-purple-50 px-1.5 py-0.5 rounded">
+            {isTarget ? 'CEO/PM ONLY' : 'CEO ONLY'}
+          </span>
         )}
       </div>
       <input 
@@ -1850,7 +2019,13 @@ function InputGroup({ label, value, onChange, type = 'text', disabled = false }:
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all ${disabled ? 'opacity-50 grayscale cursor-not-allowed border-dashed' : ''}`}
+        className={`w-full px-5 py-4 border rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold transition-all ${
+          disabled 
+            ? isTarget
+              ? 'bg-[#F5F3FF] text-[#6B21A8] border-[#EDE9FE] cursor-not-allowed font-extrabold'
+              : 'bg-slate-50 text-slate-400 border-slate-100 opacity-50 grayscale cursor-not-allowed border-dashed' 
+            : 'bg-slate-50 text-slate-900 border-slate-100'
+        }`}
       />
     </div>
   );

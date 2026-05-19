@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState } from 'react';
-import { ShoppingCart, Edit2 } from 'lucide-react';
+import { ShoppingCart, ChevronDown, TrendingUp } from 'lucide-react';
 import { SalesMarketingMetric } from '@/types/dashboard';
 
 interface SalesCardProps {
@@ -11,117 +13,144 @@ interface SalesCardProps {
 
 export const SalesCard: React.FC<SalesCardProps> = ({
   metrics,
-  userRole,
-  editMode,
-  onEdit,
 }) => {
   const [timeFilter, setTimeFilter] = useState<'week' | 'month'>('week');
-  const [touchpointFilter, setTouchpointFilter] = useState<'all' | 'LinkedIn' | 'Website' | 'X'>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Aggregate by touchpoint to handle multiple historical rows per touchpoint
   const aggregatedMap = new Map<string, { touchpoint: string; leadsGenerated: number; conversions: number }>();
   for (const m of metrics) {
     if (m.period !== timeFilter) continue;
-    if (touchpointFilter !== 'all' && m.touchpoint !== touchpointFilter) continue;
     const existing = aggregatedMap.get(m.touchpoint);
     if (existing) {
       existing.leadsGenerated += m.leadsGenerated;
       existing.conversions += m.conversions;
     } else {
-      aggregatedMap.set(m.touchpoint, { touchpoint: m.touchpoint, leadsGenerated: m.leadsGenerated, conversions: m.conversions });
+      aggregatedMap.set(m.touchpoint, { 
+        touchpoint: m.touchpoint, 
+        leadsGenerated: m.leadsGenerated, 
+        conversions: m.conversions 
+      });
     }
   }
   const filteredMetrics = Array.from(aggregatedMap.values());
 
   const totalLeads = filteredMetrics.reduce((sum, m) => sum + m.leadsGenerated, 0);
   const totalConversions = filteredMetrics.reduce((sum, m) => sum + m.conversions, 0);
-  const conversionRate = totalLeads > 0 ? Math.round((totalConversions / totalLeads) * 100) : 0;
-
-  const canEdit = userRole === 'CEO' || userRole === 'MARKETING';
+  const conversionRate = totalLeads > 0 ? (totalConversions / totalLeads) * 100 : 0;
+  const leadsGoal = timeFilter === 'week' ? 10 : 100;
+  const progress = Math.min(Math.round((totalLeads / leadsGoal) * 100), 100);
 
   return (
-    <div className="card h-full flex flex-col relative group">
-      {editMode && onEdit && canEdit && (
-        <button 
-          onClick={onEdit}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
-        >
-          <Edit2 size={14} />
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="bg-white border border-[#E2E8F0] rounded-[24px] p-6 shadow-sm flex flex-col relative group h-full justify-between">
+      {/* Header with inline dropdown */}
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-[#7C3AED] shrink-0">
             <ShoppingCart size={20} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[18px] font-black text-slate-900 leading-none">Tradevu Sales</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Marketing</span>
+            <span className="text-[14px] font-black text-slate-900 leading-none whitespace-nowrap">Tradevu Sales</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 whitespace-nowrap">Marketing</span>
           </div>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <div className="flex bg-slate-100 p-1 rounded-lg">
+        <div className="relative">
           <button 
-            onClick={() => setTimeFilter('week')}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${timeFilter === 'week' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-600 transition-all focus:outline-none whitespace-nowrap shrink-0"
           >
-            This Week
+            <span>{timeFilter === 'week' ? 'This week' : 'This month'}</span>
+            <ChevronDown size={14} className="text-slate-400" />
           </button>
-          <button 
-            onClick={() => setTimeFilter('month')}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${timeFilter === 'month' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            This Month
-          </button>
+          
+          {isDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+              <div className="absolute right-0 mt-1.5 w-32 bg-white border border-slate-100 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => {
+                    setTimeFilter('week');
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-[11px] font-black uppercase transition-colors ${timeFilter === 'week' ? 'bg-[#F5F3FF] text-[#7C3AED]' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  This week
+                </button>
+                <button
+                  onClick={() => {
+                    setTimeFilter('month');
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-[11px] font-black uppercase transition-colors ${timeFilter === 'month' ? 'bg-[#F5F3FF] text-[#7C3AED]' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  This month
+                </button>
+              </div>
+            </>
+          )}
         </div>
-
-        <select 
-          value={touchpointFilter}
-          onChange={(e) => setTouchpointFilter(e.target.value as any)}
-          className="bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider text-slate-600 focus:outline-none border-none cursor-pointer"
-        >
-          <option value="all">All Touchpoints</option>
-          <option value="LinkedIn">LinkedIn</option>
-          <option value="Website">Website</option>
-          <option value="X">X</option>
-        </select>
       </div>
 
-      {/* Main Metrics */}
-      <div className="space-y-6">
+      {/* Leads Generated Section */}
+      <div className="mb-5">
+        <div className="text-[13px] font-medium text-[#64748B] mb-2">Leads Generated</div>
+        <div className="flex items-baseline gap-1.5 mb-3.5">
+          <span className="text-[26px] font-semibold text-black leading-none">{totalLeads}</span>
+          <span className="text-[16px] font-medium text-[#94A3B8]">/ {leadsGoal}</span>
+        </div>
+        <div className="h-[6px] bg-[#F1F5F9] rounded-full overflow-hidden">
+          <div className="h-full bg-[#7C3AED] rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[#F1F5F9] my-1" />
+
+      {/* Grid of conversions and rate */}
+      <div className="grid grid-cols-2 gap-4 py-4">
         <div>
-          <div className="text-[12px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Leads Generated</div>
-          <div className="text-[32px] font-black text-slate-900 leading-none">{totalLeads}</div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-          <div>
-            <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Conversions</div>
-            <div className="text-[28px] font-black text-slate-900 leading-none">{totalConversions}</div>
+          <div className="text-[13px] font-medium text-[#64748B] mb-2">Conversions</div>
+          <div className="text-[26px] font-semibold text-black leading-none">{totalConversions}</div>
+          <div className="flex items-center gap-1 text-[13px] whitespace-nowrap mt-2">
+            <TrendingUp size={16} className="text-[#10B981] shrink-0" strokeWidth={2.5} />
+            <span className="text-[#10B981] font-semibold">+25%</span>
+            <span className="text-[#64748B]">vs last week</span>
           </div>
-          <div>
-            <div className="text-[12px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Conv. Rate</div>
-            <div className="text-[28px] font-black text-primary leading-none">{conversionRate}%</div>
+        </div>
+        <div>
+          <div className="text-[13px] font-medium text-[#64748B] mb-2">Conversion Rate</div>
+          <div className="text-[26px] font-semibold text-[#7C3AED] leading-none">
+            {conversionRate.toFixed(1)}%
           </div>
         </div>
       </div>
 
-      {/* Touchpoint Breakdown if 'all' is selected */}
-      {touchpointFilter === 'all' && (
-        <div className="mt-auto pt-6 space-y-3">
-          {filteredMetrics.map(m => (
-            <div key={m.touchpoint} className="flex justify-between items-center text-[11px] font-bold">
-              <span className="text-slate-400 uppercase tracking-widest">{m.touchpoint}</span>
-              <span className="text-slate-900">{m.conversions} conv. ({m.leadsGenerated} leads)</span>
+      {/* Divider */}
+      <div className="border-t border-[#F1F5F9] my-1" />
+
+      {/* Touchpoint Breakdown with Hover Tooltips */}
+      <div className="pt-4 space-y-3.5">
+        {filteredMetrics.map(m => (
+          <div 
+            key={m.touchpoint} 
+            className="flex justify-between items-center text-[13px] font-medium relative group/row py-0.5 cursor-help"
+          >
+            <span className="text-[#64748B]">
+              {m.touchpoint === 'X' ? 'X(Twitter)' : m.touchpoint}
+            </span>
+            <span className="text-black font-semibold">
+              {m.conversions} <span className="text-[#94A3B8] font-medium">({m.leadsGenerated})</span>
+            </span>
+
+            {/* Custom Tooltip */}
+            <div className="opacity-0 pointer-events-none group-hover/row:opacity-100 absolute -top-8 right-0 bg-slate-950 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-xl transition-all duration-150 whitespace-nowrap z-30 font-black tracking-wide">
+              {m.conversions} conversions, {m.leadsGenerated} leads
+              <div className="absolute top-full right-4 -mt-1 w-2 h-2 bg-slate-950 rotate-45" />
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

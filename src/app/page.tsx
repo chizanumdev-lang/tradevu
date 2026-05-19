@@ -323,7 +323,7 @@ node scripts/create-tables.mjs
     : 'Just now';
 
   return (
-    <main className="max-w-[1440px] mx-auto px-10 py-10">
+    <main className="max-w-[1680px] mx-auto px-6 py-10">
       {/* ── Dashboard Header ────────────────────────────────────────── */}
       <header className="mb-8 flex justify-between items-end">
         <div>
@@ -347,7 +347,7 @@ node scripts/create-tables.mjs
 
       {/* ── Scoreboard border ─────────────────────── */}
       <div className="scoreboard-wrap">
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-4">
 
           {/* ── Top Row (3 cards, each 4 cols) ── */}
           <div className="col-span-12 md:col-span-4">
