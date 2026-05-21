@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, RefreshCcw, Lock, LogOut, TrendingUp, 
-  Activity, Layers, CreditCard, LayoutDashboard,
-  ArrowRight, CheckCircle2, Globe, Target, MessageSquare, 
-  DollarSign, Edit3, Edit2, ChevronDown, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, Landmark
+  Users, RefreshCcw, Lock, LogOut, 
+  Activity, LayoutDashboard,
+  ArrowRight, CheckCircle2, 
+  Edit3, Edit2, ChevronDown, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, ArrowLeftRight
 } from 'lucide-react';
 import Image from 'next/image';
-import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, DeptTarget as DeptTargetType } from '@/types/dashboard';
+import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, Department, LoanType, Currency, ExchangeRate } from '@/types/dashboard';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
@@ -42,6 +42,29 @@ const ALL_ROLES: (Role | 'MARKETING')[] = ['CEO', 'HR', 'PM', 'MARKETING'];
 const ALL_PERMISSIONS = ['revenue', 'launch', 'customers', 'ops', 'pay', 'finance', 'engineering', 'users', 'settings', 'marketing'];
 
 export default function AdminPage() {
+  // Dynamically calculate default start and end dates (Sunday and Friday of current week)
+  const getDefaultDates = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day;
+    const currentSunday = new Date(today.getFullYear(), today.getMonth(), diff);
+    const currentFriday = new Date(currentSunday.getFullYear(), currentSunday.getMonth(), currentSunday.getDate() + 5);
+
+    const formatISODate = (date: Date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    return {
+      start: formatISODate(currentSunday),
+      end: formatISODate(currentFriday),
+    };
+  };
+
+  const { start: defaultStart, end: defaultEnd } = getDefaultDates();
+
   const [users, setUsers] = useState<User[]>(AUTHORIZED_USERS);
   const [permissions, setPermissions] = useState<Record<string, string[]>>(INITIAL_PERMISSIONS);
   const [loading, setLoading] = useState(true);
@@ -75,6 +98,13 @@ export default function AdminPage() {
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
   const [editingUserEmail, setEditingUserEmail] = useState<string | null>(null);
   const [isRatesCollapsed, setIsRatesCollapsed] = useState(true);
+
+  // Modal selector states
+  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'NGN' | 'USDT' | 'USDC'>('NGN');
+  const [selectedMonth, setSelectedMonth] = useState<'May'>('May');
+  const [selectedStartDate, setSelectedStartDate] = useState<string>(defaultStart);
+  const [selectedEndDate, setSelectedEndDate] = useState<string>(defaultEnd);
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
 
 
   const hasPermission = (permission: string) => {
@@ -216,8 +246,11 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchDashboard();
-    setMounted(true);
+    const timer = setTimeout(() => {
+      fetchDashboard();
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -280,7 +313,7 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, variables })
       }).then(res => res.json())
-      .then(({ data, errors }) => {
+      .then(({ errors }) => {
         if (!errors) {
           setUsers(updatedUsers);
           // Log them in after password change
@@ -307,6 +340,11 @@ export default function AdminPage() {
   };
 
   const handleOpenEdit = (section: string, dept?: string) => {
+    setSelectedCurrency('NGN');
+    setSelectedMonth('May');
+    setSelectedStartDate(defaultStart);
+    setSelectedEndDate(defaultEnd);
+    setSelectedPeriod('week');
     setEditingSection(section);
     setEditingDept(dept || null);
     setIsModalOpen(true);
@@ -459,13 +497,13 @@ export default function AdminPage() {
           scrollEnabled: metrics.settings.scrollEnabled,
           dashboardTitle: metrics.settings.dashboardTitle,
           launchStatusTitle: metrics.settings.launchStatusTitle,
-          departments: metrics.settings.departments?.map((d: any) => ({ name: d.name, headEmail: d.headEmail }))
+          departments: metrics.settings.departments?.map((d: Department) => ({ name: d.name, headEmail: d.headEmail }))
         };
       }
 
       const res = await fetch('/api/graphql', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ query, variables })
       });
       
@@ -479,7 +517,7 @@ export default function AdminPage() {
       setIsModalOpen(false);
       setEditingDept(null);
       fetchDashboard();
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: `Failed to update ${editingSection}.` });
     } finally {
       setSavingSection(null);
@@ -863,197 +901,249 @@ export default function AdminPage() {
                 )}
 
                 {editingSection === 'sales' && (
-                  <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {['week', 'month'].map(period => (
-                      <div key={period} className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-4 bg-purple-600 rounded-full" />
-                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
-                            {period === 'week' ? 'Weekly' : 'Monthly'} Sales Touchpoints
-                          </h3>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
-                          {['Website', 'X', 'LinkedIn'].map(touchpoint => {
-                            const idx = metrics.salesMarketing.findIndex(m => m.period === period && m.touchpoint === touchpoint);
-                            const metric = metrics.salesMarketing[idx] || { leadsGenerated: 0, conversions: 0 };
-                            
-                            const updateVal = (field: 'leadsGenerated' | 'conversions', val: number) => {
-                              const updated = [...metrics.salesMarketing];
-                              if (idx > -1) {
-                                updated[idx] = { ...updated[idx], [field]: val };
-                              } else {
-                                updated.push({
-                                  period: period as any,
-                                  touchpoint: touchpoint as any,
-                                  leadsGenerated: field === 'leadsGenerated' ? val : 0,
-                                  conversions: field === 'conversions' ? val : 0
-                                });
-                              }
-                              setMetrics({ ...metrics, salesMarketing: updated });
-                            };
+                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <DropdownSelect
+                        label="Month Period"
+                        value={selectedMonth}
+                        options={['May']}
+                        onChange={(v) => {
+                          setSelectedMonth(v);
+                          setSelectedPeriod('month');
+                        }}
+                        active={selectedPeriod === 'month'}
+                      />
+                      <DateRangeDropdown
+                        label="Day Range"
+                        startDate={selectedStartDate}
+                        endDate={selectedEndDate}
+                        onStartChange={(v) => {
+                          setSelectedStartDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        onEndChange={(v) => {
+                          setSelectedEndDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        active={selectedPeriod === 'week'}
+                      />
+                    </div>
 
-                            const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+                    <div className="bg-[#F8F9FD] border border-[#ECEFF6] rounded-[28px] p-6 space-y-6">
+                      {['Website', 'X', 'LinkedIn'].map(touchpoint => {
+                        const idx = metrics.salesMarketing.findIndex(m => m.period === selectedPeriod && m.touchpoint === touchpoint);
+                        const metric = metrics.salesMarketing[idx] || { leadsGenerated: 0, conversions: 0 };
+                        
+                        const updateVal = (field: 'leadsGenerated' | 'conversions', val: number) => {
+                          const updated = [...metrics.salesMarketing];
+                          if (idx > -1) {
+                            updated[idx] = { ...updated[idx], [field]: val };
+                          } else {
+                            updated.push({
+                              period: selectedPeriod,
+                              touchpoint: touchpoint as 'LinkedIn' | 'Website' | 'X',
+                              leadsGenerated: field === 'leadsGenerated' ? val : 0,
+                              conversions: field === 'conversions' ? val : 0
+                            });
+                          }
+                          setMetrics({ ...metrics, salesMarketing: updated });
+                        };
 
-                            return (
-                              <div key={touchpoint} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                                  <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
-                                  {touchpoint === 'X' ? 'X (Twitter)' : touchpoint}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <InputGroup 
-                                    label="Target (Leads)" 
-                                    value={metric.leadsGenerated} 
-                                    onChange={(v) => updateVal('leadsGenerated', Number(v))}
-                                    disabled={!isCeoOrPm}
-                                    isTarget={true}
-                                  />
-                                  <InputGroup 
-                                    label="Actual (Conversions)" 
-                                    value={metric.conversions} 
-                                    onChange={(v) => updateVal('conversions', Number(v))}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                        const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+
+                        return (
+                          <div key={touchpoint} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                            <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                              {touchpoint === 'X' ? 'X (Twitter)' : touchpoint}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <InputGroup 
+                                label="Target (Leads)" 
+                                value={metric.leadsGenerated} 
+                                onChange={(v) => updateVal('leadsGenerated', Number(v))}
+                                disabled={!isCeoOrPm}
+                                isTarget={true}
+                              />
+                              <InputGroup 
+                                label="Actual (Conversions)" 
+                                value={metric.conversions} 
+                                onChange={(v) => updateVal('conversions', Number(v))}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
                 {editingSection === 'pay' && (
-                  <div className="space-y-12 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {['week', 'month'].map(period => (
-                      <div key={period} className="space-y-6">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-4 bg-purple-600 rounded-full" />
-                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
-                            {period === 'week' ? 'Weekly' : 'Monthly'} Pay Metrics
-                          </h3>
-                        </div>
-                        
-                        <div className="space-y-6 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
-                          {(() => {
-                            const metric = metrics.pay.metrics.find(m => m.period === period) || {
-                              period, weeklyGoal: 0, conversations: 0, usersConverted: 0, lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0
-                            };
-                            const updatePayMetric = (field: string, val: number) => {
-                              const newMetrics = [...metrics.pay.metrics];
-                              const idx = newMetrics.findIndex(m => m.period === period);
-                              if (idx > -1) {
-                                newMetrics[idx] = { ...newMetrics[idx], [field]: val };
-                              } else {
-                                newMetrics.push({ 
-                                  period: period as any, weeklyGoal: 0, conversations: 0, usersConverted: 0, 
-                                  lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0, [field]: val 
-                                });
-                              }
-                              setMetrics({ ...metrics, pay: { ...metrics.pay, metrics: newMetrics } });
-                            };
+                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <DropdownSelect
+                        label="Month Period"
+                        value={selectedMonth}
+                        options={['May']}
+                        onChange={(v) => {
+                          setSelectedMonth(v);
+                          setSelectedPeriod('month');
+                        }}
+                        active={selectedPeriod === 'month'}
+                      />
+                      <DateRangeDropdown
+                        label="Day Range"
+                        startDate={selectedStartDate}
+                        endDate={selectedEndDate}
+                        onStartChange={(v) => {
+                          setSelectedStartDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        onEndChange={(v) => {
+                          setSelectedEndDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        active={selectedPeriod === 'week'}
+                      />
+                    </div>
 
-                            const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+                    <div className="bg-[#F8F9FD] border border-[#ECEFF6] rounded-[28px] p-6 space-y-6">
+                      {(() => {
+                        const metric = metrics.pay.metrics.find(m => m.period === selectedPeriod) || {
+                          period: selectedPeriod, weeklyGoal: 0, conversations: 0, usersConverted: 0, lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0
+                        };
+                        const updatePayMetric = (field: string, val: number) => {
+                          const newMetrics = [...metrics.pay.metrics];
+                          const idx = newMetrics.findIndex(m => m.period === selectedPeriod);
+                          if (idx > -1) {
+                            newMetrics[idx] = { ...newMetrics[idx], [field]: val };
+                          } else {
+                            newMetrics.push({ 
+                              period: selectedPeriod, weeklyGoal: 0, conversations: 0, usersConverted: 0, 
+                              lcyTransfers: 0, lcyGoal: 0, fcyTransfers: 0, fcyGoal: 0, [field]: val 
+                            });
+                          }
+                          setMetrics({ ...metrics, pay: { ...metrics.pay, metrics: newMetrics } });
+                        };
 
-                            return (
-                              <div className="space-y-6">
-                                {/* Conversations: Target & Actual */}
-                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                  <InputGroup 
-                                    label="Conversations Goal (Target)" 
-                                    value={metric.weeklyGoal} 
-                                    onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} 
-                                    disabled={!isCeoOrPm} 
-                                    isTarget={true}
-                                  />
-                                  <InputGroup 
-                                    label="Total Conversations (Actual)" 
-                                    value={metric.conversations} 
-                                    onChange={(v) => updatePayMetric('conversations', Number(v))} 
-                                  />
-                                </div>
+                        const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
 
-                                {/* LCY: Target & Actual */}
-                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                  <InputGroup 
-                                    label="LCY Goal (Target)" 
-                                    value={metric.lcyGoal} 
-                                    onChange={(v) => updatePayMetric('lcyGoal', Number(v))} 
-                                    disabled={!isCeoOrPm}
-                                    isTarget={true}
-                                  />
-                                  <InputGroup 
-                                    label="LCY Transfers (Actual)" 
-                                    value={metric.lcyTransfers} 
-                                    onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} 
-                                  />
-                                </div>
-
-                                {/* FCY: Target & Actual */}
-                                <div className="grid grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                  <InputGroup 
-                                    label="FCY Goal (Target)" 
-                                    value={metric.fcyGoal} 
-                                    onChange={(v) => updatePayMetric('fcyGoal', Number(v))} 
-                                    disabled={!isCeoOrPm}
-                                    isTarget={true}
-                                  />
-                                  <InputGroup 
-                                    label="FCY Transfers (Actual)" 
-                                    value={metric.fcyTransfers} 
-                                    onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} 
-                                  />
-                                </div>
-
-                                {/* Additional conversions count */}
-                                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                  <InputGroup 
-                                    label="Users Converted" 
-                                    value={metric.usersConverted} 
-                                    onChange={(v) => updatePayMetric('usersConverted', Number(v))} 
-                                  />
-                                </div>
+                        return (
+                          <div className="space-y-6">
+                            {/* Conversations: Target & Actual */}
+                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                                Conversations
                               </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    ))}
+                              <div className="grid grid-cols-2 gap-4">
+                                <InputGroup 
+                                  label="Conversations Goal (Target)" 
+                                  value={metric.weeklyGoal} 
+                                  onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} 
+                                  disabled={!isCeoOrPm} 
+                                  isTarget={true}
+                                />
+                                <InputGroup 
+                                  label="Total Conversations (Actual)" 
+                                  value={metric.conversations} 
+                                  onChange={(v) => updatePayMetric('conversations', Number(v))} 
+                                />
+                              </div>
+                            </div>
+
+                            {/* LCY: Target & Actual */}
+                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                                LCY Transfers
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <InputGroup 
+                                  label="LCY Goal (Target)" 
+                                  value={metric.lcyGoal} 
+                                  onChange={(v) => updatePayMetric('lcyGoal', Number(v))} 
+                                  disabled={!isCeoOrPm}
+                                  isTarget={true}
+                                />
+                                <InputGroup 
+                                  label="LCY Transfers (Actual)" 
+                                  value={metric.lcyTransfers} 
+                                  onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} 
+                                />
+                              </div>
+                            </div>
+
+                            {/* FCY: Target & Actual */}
+                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                                FCY Transfers
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <InputGroup 
+                                  label="FCY Goal (Target)" 
+                                  value={metric.fcyGoal} 
+                                  onChange={(v) => updatePayMetric('fcyGoal', Number(v))} 
+                                  disabled={!isCeoOrPm}
+                                  isTarget={true}
+                                />
+                                <InputGroup 
+                                  label="FCY Transfers (Actual)" 
+                                  value={metric.fcyTransfers} 
+                                  onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} 
+                                />
+                              </div>
+                            </div>
+
+                            {/* Additional conversions count */}
+                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                                Users Converted
+                              </div>
+                              <InputGroup 
+                                label="Users Converted" 
+                                value={metric.usersConverted} 
+                                onChange={(v) => updatePayMetric('usersConverted', Number(v))} 
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 )}
 
                 {editingSection === 'finance' && (
-                  <div className="space-y-12 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                     {/* Collapsible Exchange Rates Section */}
-                    <div className="p-6 bg-[#F5F3FF] rounded-3xl border border-[#EDE9FE]">
+                    <div className="p-6 bg-[#F4F6FB] rounded-3xl border border-slate-100/50 mb-6">
                       <button 
                         onClick={() => setIsRatesCollapsed(!isRatesCollapsed)}
                         className="w-full flex items-center justify-between focus:outline-none"
                       >
-                        <div className="flex items-center gap-2">
-                          <ArrowDownUp size={16} className="text-[#7C3AED]" />
-                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Exchange Rates (vs USD)</h3>
-                        </div>
+                        <h3 className="text-sm font-bold text-slate-800">Exchange rate</h3>
                         <ChevronDown 
                           size={18} 
-                          className={`text-slate-500 transition-transform duration-200 ${isRatesCollapsed ? '' : 'rotate-180'}`} 
+                          className={`text-slate-400 transition-transform duration-200 ${isRatesCollapsed ? '' : 'rotate-180'}`} 
                         />
                       </button>
                       
                       {!isRatesCollapsed && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 animate-in fade-in duration-200">
-                          {['NGN', 'USDT', 'USDC'].map(ccy => {
+                        <div className="flex flex-col gap-5 mt-6 animate-in fade-in duration-200">
+                          {['NGN'].map(ccy => {
                             const storedRate = metrics.finance.exchangeRates.find(r => r.currency === ccy)?.rateToUsd ?? 0;
                             return (
                               <ExchangeRateInput
                                 key={ccy}
-                                label={`${ccy === 'NGN' ? '🇳🇬' : '🪙'} ${ccy} Rate`}
+                                currency={ccy}
                                 value={storedRate}
                                 onCommit={(num) => {
                                   const newRates = [...metrics.finance.exchangeRates];
                                   const idx = newRates.findIndex(r => r.currency === ccy);
                                   if (idx > -1) newRates[idx] = { ...newRates[idx], rateToUsd: num };
-                                  else newRates.push({ currency: ccy as any, rateToUsd: num });
+                                  else newRates.push({ currency: ccy as Currency, rateToUsd: num });
                                   setMetrics({ ...metrics, finance: { ...metrics.finance, exchangeRates: newRates } });
                                 }}
                               />
@@ -1063,53 +1153,133 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    {/* Metrics Section */}
-                    <div className="space-y-12">
-                      {['week', 'month'].map(period => (
-                        <div key={period} className="space-y-6">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
-                            <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">
-                              {period === 'week' ? 'Weekly' : 'Monthly'} Metrics
-                            </h3>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 gap-8">
-                            {['Payables', 'Receivables', 'Payment'].map(type => (
-                              <div key={type} className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{type}</p>
-                                <div className="space-y-4">
-                                  {['USD', 'NGN', 'USDT', 'USDC'].map(ccy => {
-                                    const metric = metrics.finance.metrics.find(m => m.period === period && m.loanType === type && m.currency === ccy) || { loanValue: 0, loanCount: 0, defaultRate: 0 };
-                                    const updateMetric = (field: string, val: number) => {
-                                      const newMetrics = [...metrics.finance.metrics];
-                                      const idx = newMetrics.findIndex(m => m.period === period && m.loanType === type && m.currency === ccy);
-                                      if (idx > -1) {
-                                        newMetrics[idx] = { ...newMetrics[idx], [field]: val };
-                                      } else {
-                                        newMetrics.push({ period: period as any, loanType: type as any, currency: ccy as any, loanValue: 0, loanCount: 0, defaultRate: 0, [field]: val });
-                                      }
-                                      setMetrics({ ...metrics, finance: { ...metrics.finance, metrics: newMetrics } });
-                                    };
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <DropdownSelect
+                        label="Currency"
+                        value={selectedCurrency}
+                        options={['NGN', 'USD', 'USDT', 'USDC']}
+                        onChange={(v) => setSelectedCurrency(v)}
+                        getIcon={getCcyIcon}
+                      />
+                      <DropdownSelect
+                        label="Month Period"
+                        value={selectedMonth}
+                        options={['May']}
+                        onChange={(v) => {
+                          setSelectedMonth(v);
+                          setSelectedPeriod('month');
+                        }}
+                        active={selectedPeriod === 'month'}
+                      />
+                      <DateRangeDropdown
+                        label="Day Range"
+                        startDate={selectedStartDate}
+                        endDate={selectedEndDate}
+                        onStartChange={(v) => {
+                          setSelectedStartDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        onEndChange={(v) => {
+                          setSelectedEndDate(v);
+                          setSelectedPeriod('week');
+                        }}
+                        active={selectedPeriod === 'week'}
+                      />
+                    </div>
 
-                                    return (
-                                      <div key={ccy} className="grid grid-cols-4 gap-4 items-end bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                        <div className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1.5">
-                                          <span>{ccy === 'USD' ? '🇺🇸' : ccy === 'NGN' ? '🇳🇬' : '🪙'}</span>
-                                          <span>{ccy}</span>
-                                        </div>
-                                        <InputGroup label="Value" value={metric.loanValue} onChange={(v) => updateMetric('loanValue', Number(v))} />
-                                        <InputGroup label="Count" value={metric.loanCount} onChange={(v) => updateMetric('loanCount', Number(v))} />
-                                        <InputGroup label="Default %" value={metric.defaultRate} onChange={(v) => updateMetric('defaultRate', Number(v))} />
-                                      </div>
-                                    );
-                                  })}
+                    <div className="bg-[#F8F9FD] border border-[#ECEFF6] rounded-[28px] p-8 space-y-10">
+                      {['Payables', 'Receivables', 'Payment'].map(type => {
+                        const metric = metrics.finance.metrics.find(m => m.period === selectedPeriod && m.loanType === type && m.currency === selectedCurrency) || { loanValue: 0, loanCount: 0, defaultRate: 0 };
+                        
+                        const updateMetric = (field: string, val: number) => {
+                          const newMetrics = [...metrics.finance.metrics];
+                          const idx = newMetrics.findIndex(m => m.period === selectedPeriod && m.loanType === type && m.currency === selectedCurrency);
+                          if (idx > -1) {
+                            newMetrics[idx] = { ...newMetrics[idx], [field]: val };
+                          } else {
+                            newMetrics.push({ 
+                              period: selectedPeriod, 
+                              loanType: type as LoanType, 
+                              currency: selectedCurrency, 
+                              loanValue: field === 'loanValue' ? val : 0, 
+                              loanCount: field === 'loanCount' ? val : 0, 
+                              defaultRate: field === 'defaultRate' ? val : 0, 
+                              [field]: val 
+                            });
+                          }
+                          setMetrics({ ...metrics, finance: { ...metrics.finance, metrics: newMetrics } });
+                        };
+
+                        const rateToUsd = selectedCurrency === 'USD' ? 1 : (metrics.finance.exchangeRates.find(r => r.currency === selectedCurrency)?.rateToUsd ?? 0);
+                        const usdEquivalent = metric.loanValue * rateToUsd;
+                        const symbol = getCcySymbol(selectedCurrency);
+
+                        // Format with commas, drop the decimals to display them separately
+                        const formattedValue = metric.loanValue ? metric.loanValue.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '';
+
+                        return (
+                          <div key={type} className="flex flex-col gap-4">
+                            <div className="font-bold text-slate-700 text-[15px]">
+                              {type === 'Payment' ? 'Payment finance' : `${type} finance`}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Amount disbursed */}
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[14px] text-slate-500 font-medium">Amount disbursed</label>
+                                <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                                  <span className="font-medium text-slate-800 mr-1 text-[15px]">{symbol}</span>
+                                  <input 
+                                    type="text"
+                                    value={formattedValue || (metric.loanValue === 0 ? '0' : '')}
+                                    onChange={(e) => updateMetric('loanValue', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
+                                    placeholder="0"
+                                  />
+                                  <span className="text-indigo-400/80 font-medium text-[15px] ml-2">.00</span>
+                                </div>
+                                {selectedCurrency !== 'USD' && (
+                                  <div className="text-slate-500 text-[13px]">
+                                    ~ ${usdEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* No. of loans */}
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[14px] text-slate-500 font-medium">No. of loans</label>
+                                <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                                  <input 
+                                    type="text"
+                                    value={metric.loanCount || ''}
+                                    onChange={(e) => updateMetric('loanCount', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
+                                    placeholder="--"
+                                  />
                                 </div>
                               </div>
-                            ))}
+
+                              {/* Default rate */}
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[14px] text-slate-500 font-medium">Default rate</label>
+                                <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                                  <input 
+                                    type="text"
+                                    value={metric.defaultRate || ''}
+                                    onChange={(e) => updateMetric('defaultRate', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
+                                    placeholder="--"
+                                  />
+                                  <span className="text-indigo-400/80 font-medium text-[15px] ml-2">%</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
+
+                      <div className="pt-2 text-[15px] text-slate-500 font-medium">
+                        Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1428,11 +1598,11 @@ export default function AdminPage() {
                                 </button>
                               </div>
                               <div className="space-y-4">
-                                {(metrics.settings.departments || []).map((dept: any, i: number) => (
+                                {(metrics.settings.departments || []).map((dept: Department, i: number) => (
                                   <div key={i} className="grid grid-cols-2 gap-4 p-4 bg-white border border-slate-100 rounded-xl relative group">
                                     <button 
                                       onClick={() => {
-                                        const updated = metrics.settings.departments!.filter((_: any, idx: number) => idx !== i);
+                                        const updated = metrics.settings.departments!.filter((_: Department, idx: number) => idx !== i);
                                         setMetrics({...metrics, settings: {...metrics.settings, departments: updated}});
                                       }}
                                       className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1590,7 +1760,7 @@ export default function AdminPage() {
                                               headers: { 'Content-Type': 'application/json' },
                                               body: JSON.stringify({ query, variables })
                                             }).then(res => res.json())
-                                            .then(({ data, errors }) => {
+                                            .then(({ errors }) => {
                                               if (!errors) {
                                                 setUsers(updatedUsers);
                                                 setMessage({ type: 'success', text: `User ${u.name} deleted.` });
@@ -1870,7 +2040,7 @@ export default function AdminPage() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ query, variables })
                           }).then(res => res.json())
-                          .then(({ data, errors }) => {
+                          .then(({ errors }) => {
                             if (!errors) {
                               setUsers(updatedUsers);
                               if (currentUser && currentUser.email === editingUserEmail) {
@@ -1963,7 +2133,7 @@ export default function AdminPage() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ query, variables })
                         }).then(res => res.json())
-                        .then(({ data, errors }) => {
+                        .then(({ errors }) => {
                           if (!errors) {
                             setUsers(updatedUsers);
                             setIsInviteModalOpen(false);
@@ -2031,33 +2201,316 @@ function InputGroup({
   );
 }
 
-// Dedicated exchange rate input: keeps raw string while typing, only commits parsed number on blur.
-// This prevents small decimals (e.g. 0.00065 for NGN) from being blocked by Number() coercion on every keystroke.
-function ExchangeRateInput({ label, value, onCommit }: { label: string; value: number; onCommit: (n: number) => void }) {
+function ExchangeRateInput({ currency, value, onCommit }: { currency: string; value: number; onCommit: (n: number) => void }) {
+  const [prevValue, setPrevValue] = useState(value);
   const [raw, setRaw] = useState(value === 0 ? '' : String(value));
 
-  // Sync from outside only when the stored value changes (e.g. fresh data load)
-  useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     setRaw(value === 0 ? '' : String(value));
-  }, [value]);
+  }
 
   return (
-    <div className="space-y-2">
-      <div className="px-1">
+    <div className="flex items-center gap-3">
+      {/* Base USD Input (Disabled) */}
+      <div className="flex-1 space-y-1">
+        <div className="px-1">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{`USD`}</label>
+        </div>
+        <div className="w-full px-5 py-4 bg-[#F0F2FA] text-slate-800 border border-slate-100 rounded-2xl font-bold text-sm select-none h-[54px] flex items-center">
+          1
+        </div>
+      </div>
+
+      {/* Exchange Icon */}
+      <div className="pt-5 text-slate-400 flex-shrink-0 flex items-center justify-center">
+        <ArrowLeftRight size={16} />
+      </div>
+
+      {/* Target Currency Input (Editable) */}
+      <div className="flex-1 space-y-1">
+        <div className="px-1">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{currency}</label>
+        </div>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          onBlur={() => {
+            const num = parseFloat(raw);
+            if (!isNaN(num)) onCommit(num);
+          }}
+          placeholder="0.00"
+          className="w-full px-5 py-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] outline-none font-bold text-slate-900 transition-all text-sm shadow-sm hover:border-slate-200 h-[54px]"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Helper utilities for flag icons and currency symbols
+const getCcyFlag = (ccy: string) => {
+  switch (ccy) {
+    case 'NGN': return '🇳🇬';
+    case 'USD': return '🇺🇸';
+    case 'USDT': return '🪙';
+    case 'USDC': return '🪙';
+    default: return '🪙';
+  }
+};
+
+const getCcySymbol = (ccy: string) => {
+  switch (ccy) {
+    case 'NGN': return '₦';
+    case 'USD': return '$';
+    case 'USDT': return '₮';
+    case 'USDC': return '$';
+    default: return '$';
+  }
+};
+
+const getCcyIcon = (ccy: string) => {
+  return (
+    <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[11px] shadow-sm border border-slate-100 flex-shrink-0 select-none">
+      {getCcyFlag(ccy)}
+    </div>
+  );
+};
+
+// Premium Custom Date Range Dropdown Component
+function DateRangeDropdown({
+  label,
+  startDate,
+  endDate,
+  onStartChange,
+  onEndChange,
+  active = false
+}: {
+  label: string;
+  startDate: string;
+  endDate: string;
+  onStartChange: (val: string) => void;
+  onEndChange: (val: string) => void;
+  active?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const formatDateRangeLabel = (startStr: string, endStr: string) => {
+    if (!startStr || !endStr) return 'Select Date Range';
+    const parseDate = (str: string) => {
+      const parts = str.split('-');
+      if (parts.length !== 3) return new Date();
+      const [y, m, d] = parts.map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const start = parseDate(startStr);
+    const end = parseDate(endStr);
+    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const startDay = start.getDate();
+    const startMonth = months[start.getMonth()];
+    const endDay = end.getDate();
+    const endMonth = months[end.getMonth()];
+    
+    return `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
+  };
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-[140px]">
+      <div className="px-1 mb-2">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
       </div>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        onBlur={() => {
-          const num = parseFloat(raw);
-          if (!isNaN(num)) onCommit(num);
-        }}
-        placeholder="e.g. 0.00065"
-        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
-      />
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between px-4 py-3.5 border rounded-2xl transition-all outline-none font-bold text-xs ${
+          active 
+            ? 'border-slate-200 bg-white text-slate-800 ring-2 ring-slate-50 shadow-sm' 
+            : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700'
+        }`}
+      >
+        <span className="truncate">{formatDateRangeLabel(startDate, endDate)}</span>
+        <ChevronDown size={14} className={`opacity-60 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/80 p-5 z-50 w-72 space-y-4 origin-top-right transition-all duration-200 ease-out">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+            Customize Range
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Start</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  onStartChange(e.target.value);
+                }}
+                className="w-full px-2.5 py-2 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 outline-none focus:border-[#7C3AED] focus:bg-white transition-all cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">End</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  onEndChange(e.target.value);
+                }}
+                className="w-full px-2.5 py-2 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 outline-none focus:border-[#7C3AED] focus:bg-white transition-all cursor-pointer"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="w-full py-2.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/10 active:scale-[0.98] transition-all"
+          >
+            Apply Range
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Premium Custom Dropdown Picker Component
+function DropdownSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  active = false,
+  getIcon,
+  getLabel
+}: {
+  label: string;
+  value: T;
+  options: T[];
+  onChange: (val: T) => void;
+  active?: boolean;
+  getIcon?: (opt: T) => React.ReactNode;
+  getLabel?: (opt: T) => string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayLabel = getLabel ? getLabel(value) : value;
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-[100px]">
+      <div className="px-1 mb-2">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+      </div>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between px-4 py-3.5 border rounded-2xl transition-all outline-none font-bold text-xs ${
+          active 
+            ? 'border-slate-200 bg-white text-slate-800 ring-2 ring-slate-50 shadow-sm' 
+            : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700'
+        }`}
+      >
+        <div className="flex items-center gap-2 overflow-hidden">
+          {getIcon && getIcon(value)}
+          <span className="truncate">{displayLabel}</span>
+        </div>
+        <ChevronDown size={14} className={`text-slate-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 animate-in fade-in slide-in-from-top-2 duration-150 max-h-48 overflow-y-auto">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                onChange(opt);
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition-colors ${
+                value === opt
+                  ? 'bg-slate-50 text-slate-900 font-extrabold'
+                  : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {getIcon && getIcon(opt)}
+                <span>{getLabel ? getLabel(opt) : opt}</span>
+              </div>
+              {value === opt && <Check size={12} className="text-slate-900 flex-shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Disbursed Loan input with live USD equivalent calculation
+function DisbursedLoanInput({
+  label,
+  value,
+  currency,
+  exchangeRates,
+  onChange
+}: {
+  label: string;
+  value: number;
+  currency: 'USD' | 'NGN' | 'USDT' | 'USDC';
+  exchangeRates: ExchangeRate[];
+  onChange: (val: number) => void;
+}) {
+  const symbol = getCcySymbol(currency);
+  const rateToUsd = currency === 'USD' ? 1 : (exchangeRates.find(r => r.currency === currency)?.rateToUsd ?? 0);
+  const usdEquivalent = value * rateToUsd;
+
+  return (
+    <div className="space-y-2 flex-1">
+      <div className="px-1 flex justify-between items-center">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+        {currency !== 'USD' && value > 0 && (
+          <span className="text-[9px] font-bold text-indigo-500 transition-all animate-pulse truncate max-w-[120px]">
+            ~ ${usdEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        )}
+      </div>
+      <div className="relative flex items-center">
+        <span className="absolute left-4 font-extrabold text-slate-400 select-none text-sm">
+          {symbol}
+        </span>
+        <input
+          type="number"
+          value={value || ''}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full pl-8 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all text-sm animate-in fade-in duration-200"
+          placeholder="0.00"
+        />
+      </div>
     </div>
   );
 }
