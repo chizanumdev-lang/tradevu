@@ -5,10 +5,10 @@ import {
   Users, RefreshCcw, Lock, LogOut, 
   Activity, LayoutDashboard,
   ArrowRight, CheckCircle2, 
-  Edit3, Edit2, ChevronDown, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowDownUp, ArrowLeftRight
+  Edit3, Edit2, ChevronDown, X, Save, Plus, Trash2, Settings, Key, Shield, UserPlus, Check, Eye, EyeOff, ArrowLeftRight
 } from 'lucide-react';
 import Image from 'next/image';
-import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, Department, LoanType, Currency, ExchangeRate } from '@/types/dashboard';
+import { DashboardData, EngineeringProject, Role, User, LaunchStatus as LaunchStatusType, Department, LoanType, Currency } from '@/types/dashboard';
 import { LaunchStatus } from '@/components/dashboard/LaunchStatus';
 
 import { RevenueRing } from '@/components/dashboard/RevenueRing';
@@ -884,7 +884,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="space-y-6 max-h-[50vh] overflow-y-auto px-1 pr-4">
+              <div className="space-y-6 max-h-[65vh] overflow-y-auto px-1 pr-4 custom-scrollbar">
                 {editingSection === 'revenue' && (
                   <>
                     <InputGroup label="Annual Goal ($)" value={metrics.revenueAnnual.goal} onChange={(v) => setMetrics({...metrics, revenueAnnual: {...metrics.revenueAnnual, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
@@ -895,13 +895,13 @@ export default function AdminPage() {
                 {editingSection === 'customers' && (
                   <>
                     <InputGroup label="Monthly Goal" value={metrics.customersMonthly.goal} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
-                    <InputGroup label="Total Customers" value={metrics.customersMonthly.current} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, current: Number(v)}})} />
-                    <InputGroup label="Active Monthly" value={metrics.customersMonthly.activeMonthly} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, activeMonthly: Number(v)}})} />
+                    <InputGroup label="Total Customers" value={metrics.customersMonthly.current} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, current: Number(v)}})} disabled={true} disabledLabel="AUTO SYNCED" />
+                    <InputGroup label="Active Monthly" value={metrics.customersMonthly.activeMonthly} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, activeMonthly: Number(v)}})} disabled={true} disabledLabel="AUTO SYNCED" />
                   </>
                 )}
 
                 {editingSection === 'sales' && (
-                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-3 mb-6">
                       <DropdownSelect
                         label="Month Period"
@@ -952,34 +952,44 @@ export default function AdminPage() {
                         const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
 
                         return (
-                          <div key={touchpoint} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                            <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                          <div key={touchpoint} className="flex flex-col gap-3">
+                            <div className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
                               {touchpoint === 'X' ? 'X (Twitter)' : touchpoint}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                              <InputGroup 
-                                label="Target (Leads)" 
-                                value={metric.leadsGenerated} 
-                                onChange={(v) => updateVal('leadsGenerated', Number(v))}
-                                disabled={!isCeoOrPm}
-                                isTarget={true}
-                              />
-                              <InputGroup 
-                                label="Actual (Conversions)" 
-                                value={metric.conversions} 
-                                onChange={(v) => updateVal('conversions', Number(v))}
-                              />
+                              <div className="space-y-1.5">
+                                <label className="text-[13px] font-medium text-slate-500">Leads</label>
+                                <input 
+                                  type="text"
+                                  value={metric.leadsGenerated || ''}
+                                  onChange={(e) => updateVal('leadsGenerated', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                  disabled={!isCeoOrPm}
+                                  className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[13px] font-medium text-slate-500">Conversions</label>
+                                <input 
+                                  type="text"
+                                  value={metric.conversions || ''}
+                                  onChange={(e) => updateVal('conversions', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                  className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                />
+                              </div>
                             </div>
                           </div>
                         );
                       })}
+                      
+                      <div className="pt-2 text-[14px] text-slate-500 font-medium">
+                        Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {editingSection === 'pay' && (
-                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-3 mb-6">
                       <DropdownSelect
                         label="Month Period"
@@ -1031,82 +1041,91 @@ export default function AdminPage() {
                         return (
                           <div className="space-y-6">
                             {/* Conversations: Target & Actual */}
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                            <div className="flex flex-col gap-3">
+                              <div className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
                                 Conversations
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <InputGroup 
-                                  label="Conversations Goal (Target)" 
-                                  value={metric.weeklyGoal} 
-                                  onChange={(v) => updatePayMetric('weeklyGoal', Number(v))} 
-                                  disabled={!isCeoOrPm} 
-                                  isTarget={true}
-                                />
-                                <InputGroup 
-                                  label="Total Conversations (Actual)" 
-                                  value={metric.conversations} 
-                                  onChange={(v) => updatePayMetric('conversations', Number(v))} 
-                                />
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Target</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.weeklyGoal || ''}
+                                    onChange={(e) => updatePayMetric('weeklyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    disabled={!isCeoOrPm}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Actual</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.conversations || ''}
+                                    onChange={(e) => updatePayMetric('conversations', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                  />
+                                </div>
                               </div>
                             </div>
 
-                            {/* LCY: Target & Actual */}
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                            {/* LCY Transfers: Target & Actual */}
+                            <div className="flex flex-col gap-3">
+                              <div className="text-[14px] font-bold text-slate-700">
                                 LCY Transfers
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <InputGroup 
-                                  label="LCY Goal (Target)" 
-                                  value={metric.lcyGoal} 
-                                  onChange={(v) => updatePayMetric('lcyGoal', Number(v))} 
-                                  disabled={!isCeoOrPm}
-                                  isTarget={true}
-                                />
-                                <InputGroup 
-                                  label="LCY Transfers (Actual)" 
-                                  value={metric.lcyTransfers} 
-                                  onChange={(v) => updatePayMetric('lcyTransfers', Number(v))} 
-                                />
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Target</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.lcyGoal || ''}
+                                    onChange={(e) => updatePayMetric('lcyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    disabled={!isCeoOrPm}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Actual</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.lcyTransfers || ''}
+                                    onChange={(e) => updatePayMetric('lcyTransfers', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                  />
+                                </div>
                               </div>
                             </div>
 
-                            {/* FCY: Target & Actual */}
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                            {/* FCY Transfers: Target & Actual */}
+                            <div className="flex flex-col gap-3">
+                              <div className="text-[14px] font-bold text-slate-700">
                                 FCY Transfers
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <InputGroup 
-                                  label="FCY Goal (Target)" 
-                                  value={metric.fcyGoal} 
-                                  onChange={(v) => updatePayMetric('fcyGoal', Number(v))} 
-                                  disabled={!isCeoOrPm}
-                                  isTarget={true}
-                                />
-                                <InputGroup 
-                                  label="FCY Transfers (Actual)" 
-                                  value={metric.fcyTransfers} 
-                                  onChange={(v) => updatePayMetric('fcyTransfers', Number(v))} 
-                                />
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Target</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.fcyGoal || ''}
+                                    onChange={(e) => updatePayMetric('fcyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    disabled={!isCeoOrPm}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[13px] font-medium text-slate-500">Actual</label>
+                                  <input 
+                                    type="text"
+                                    value={metric.fcyTransfers || ''}
+                                    onChange={(e) => updatePayMetric('fcyTransfers', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                  />
+                                </div>
                               </div>
                             </div>
-
-                            {/* Additional conversions count */}
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                              <div className="text-xs font-black text-slate-800 uppercase mb-3 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
-                                Users Converted
-                              </div>
-                              <InputGroup 
-                                label="Users Converted" 
-                                value={metric.usersConverted} 
-                                onChange={(v) => updatePayMetric('usersConverted', Number(v))} 
-                              />
+                            
+                            <div className="pt-2 text-[14px] text-slate-500 font-medium">
+                              Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
                             </div>
                           </div>
                         );
@@ -1116,7 +1135,7 @@ export default function AdminPage() {
                 )}
 
                 {editingSection === 'finance' && (
-                  <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-6">
                     {/* Collapsible Exchange Rates Section */}
                     <div className="p-6 bg-[#F4F6FB] rounded-3xl border border-slate-100/50 mb-6">
                       <button 
@@ -1285,7 +1304,7 @@ export default function AdminPage() {
                 )}
 
                 {editingSection === 'launch' && (
-                  <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-8">
                     <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
                       <div>
                         <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Multi-Quarter Launch</h3>
@@ -2165,14 +2184,16 @@ function InputGroup({
   onChange, 
   type = 'text', 
   disabled = false, 
-  isTarget = false 
+  isTarget = false,
+  disabledLabel
 }: { 
   label: string, 
   value: string | number, 
   onChange: (v: string) => void, 
   type?: string, 
   disabled?: boolean, 
-  isTarget?: boolean 
+  isTarget?: boolean,
+  disabledLabel?: string
 }) {
   return (
     <div className="space-y-2">
@@ -2180,7 +2201,7 @@ function InputGroup({
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
         {disabled && (
           <span className="text-[8px] font-black text-[#7C3AED] uppercase tracking-tighter bg-purple-50 px-1.5 py-0.5 rounded">
-            {isTarget ? 'CEO/PM ONLY' : 'CEO ONLY'}
+            {disabledLabel ? disabledLabel : (isTarget ? 'CEO/PM ONLY' : 'CEO ONLY')}
           </span>
         )}
       </div>
@@ -2191,7 +2212,7 @@ function InputGroup({
         disabled={disabled}
         className={`w-full px-5 py-4 border rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold transition-all ${
           disabled 
-            ? isTarget
+            ? isTarget || disabledLabel
               ? 'bg-[#F5F3FF] text-[#6B21A8] border-[#EDE9FE] cursor-not-allowed font-extrabold'
               : 'bg-slate-50 text-slate-400 border-slate-100 opacity-50 grayscale cursor-not-allowed border-dashed' 
             : 'bg-slate-50 text-slate-900 border-slate-100'
@@ -2470,48 +2491,3 @@ function DropdownSelect<T extends string>({
     </div>
   );
 }
-
-// Disbursed Loan input with live USD equivalent calculation
-function DisbursedLoanInput({
-  label,
-  value,
-  currency,
-  exchangeRates,
-  onChange
-}: {
-  label: string;
-  value: number;
-  currency: 'USD' | 'NGN' | 'USDT' | 'USDC';
-  exchangeRates: ExchangeRate[];
-  onChange: (val: number) => void;
-}) {
-  const symbol = getCcySymbol(currency);
-  const rateToUsd = currency === 'USD' ? 1 : (exchangeRates.find(r => r.currency === currency)?.rateToUsd ?? 0);
-  const usdEquivalent = value * rateToUsd;
-
-  return (
-    <div className="space-y-2 flex-1">
-      <div className="px-1 flex justify-between items-center">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
-        {currency !== 'USD' && value > 0 && (
-          <span className="text-[9px] font-bold text-indigo-500 transition-all animate-pulse truncate max-w-[120px]">
-            ~ ${usdEquivalent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        )}
-      </div>
-      <div className="relative flex items-center">
-        <span className="absolute left-4 font-extrabold text-slate-400 select-none text-sm">
-          {symbol}
-        </span>
-        <input
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full pl-8 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all text-sm animate-in fade-in duration-200"
-          placeholder="0.00"
-        />
-      </div>
-    </div>
-  );
-}
-

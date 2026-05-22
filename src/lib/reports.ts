@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { SupabaseClient } from '@supabase/supabase-js';
+
 
 export async function generateReport(
   module: 'all' | 'finance' | 'sales' | 'pay' | 'engineering' | 'customers' | 'revenue' | 'launch',
@@ -8,7 +8,7 @@ export async function generateReport(
 ) {
   const supabase = await createClient();
 
-  const reportData: Record<string, any> = {
+  const reportData: Record<string, unknown> = {
     generatedAt: new Date().toISOString(),
     module,
     filters: { startDate, endDate }
@@ -26,7 +26,12 @@ export async function generateReport(
     const periodTotals: Record<string, number> = {};
 
     if (metrics) {
-      metrics.forEach((m: any) => {
+      interface FinanceMetricRow {
+        period: string;
+        historical_rate_to_usd?: number;
+        loan_value: number;
+      }
+      metrics.forEach((m: FinanceMetricRow) => {
         // Use historical rate for reporting, falling back to 1 if missing
         const rate = m.historical_rate_to_usd || 1;
         const valUsd = m.loan_value * rate;
@@ -70,7 +75,7 @@ export async function generateReport(
   }
 
   if (module === 'all' || module === 'customers') {
-    const { data: customers } = await supabase.from('customers_monthly').select('*');
+    const { data: customers } = await supabase.from('customer_metrics').select('*');
     reportData.customers = customers;
   }
 

@@ -26,7 +26,7 @@ export const RevenueRing: React.FC<RevenueRingProps> = ({
       {editMode && onEdit && (
         <button 
           onClick={onEdit}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-10 animate-in zoom-in"
+          className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-10 animate-in zoom-in"
         >
           <Edit2 size={14} />
         </button>

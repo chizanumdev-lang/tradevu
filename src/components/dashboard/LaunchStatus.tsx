@@ -45,7 +45,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
       {editMode && onEdit && userRole === 'CEO' && (
         <button 
           onClick={() => onEdit()}
-          className="absolute -top-1 -right-1 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform z-20"
+          className="absolute top-4 right-4 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 hover:bg-slate-50 transition-all z-20 animate-in zoom-in"
         >
           <Edit2 size={14} />
         </button>
