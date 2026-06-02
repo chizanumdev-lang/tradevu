@@ -140,8 +140,8 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({
               <option value="All">All</option>
               <option value="USD">🇺🇸 USD</option>
               <option value="NGN">🇳🇬 NGN</option>
-              <option value="USDT">🪙 USDT</option>
-              <option value="USDC">🪙 USDC</option>
+              <option value="USDT">🟢 USDT</option>
+              <option value="USDC">🔵 USDC</option>
             </select>
             <ChevronDown size={14} className="text-[#94A3B8] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>

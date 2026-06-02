@@ -112,23 +112,10 @@ export default function ReportsPage() {
       });
   }, [selectedWeek]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Activity size={28} className="text-white" />
-          </div>
-          <p className="text-slate-500 font-bold">Crunching historical data...</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Build chronological time-series keyed by date ──────────────────
   const timeMap = new Map<string, any>();
 
-  (data.finance?.rawMetrics || []).forEach((m: any) => {
+  (data?.finance?.rawMetrics || []).forEach((m: any) => {
     const d = m.recorded_at?.split('T')[0];
     if (!d) return;
     if (!timeMap.has(d)) timeMap.set(d, { date: d });
@@ -141,7 +128,7 @@ export default function ReportsPage() {
     if (m.loan_type === 'Payment') entry.payments = (entry.payments || 0) + valUsd;
   });
 
-  (data.sales || []).forEach((s: any) => {
+  (data?.sales || []).forEach((s: any) => {
     const d = s.recorded_at?.split('T')[0];
     if (!d) return;
     if (!timeMap.has(d)) timeMap.set(d, { date: d });
@@ -150,7 +137,7 @@ export default function ReportsPage() {
     entry.conversions = (entry.conversions || 0) + (s.conversions || 0);
   });
 
-  (data.pay || []).forEach((p: any) => {
+  (data?.pay || []).forEach((p: any) => {
     const d = p.recorded_at?.split('T')[0];
     if (!d) return;
     if (!timeMap.has(d)) timeMap.set(d, { date: d });
@@ -205,14 +192,14 @@ export default function ReportsPage() {
     }));
 
   // ── Engineering projects ─────────────────────────────────────────────
-  const engProjects = (data.engineering?.projects || []).map((p: any) => ({
+  const engProjects = (data?.engineering?.projects || []).map((p: any) => ({
     name: p.name?.length > 18 ? p.name.slice(0, 18) + '…' : (p.name || 'Project'),
     completion: p.progress !== undefined ? p.progress : (p.completion_percentage || p.completion || 0),
     impact: p.impactScore !== undefined ? p.impactScore : (p.impact_score || 0),
   }));
 
   // ── Summary KPIs ─────────────────────────────────────────────────────
-  const totalLoans = (data.finance?.calculatedTotalsUsd?.total || 0);
+  const totalLoans = (data?.finance?.calculatedTotalsUsd?.total || 0);
   const totalLeads = timeSeries.reduce((s, d) => s + (d.leads || 0), 0);
   const avgConvRate = timeSeries.length
     ? (timeSeries.reduce((s, d) => s + (d.convRate || 0), 0) / timeSeries.length).toFixed(1)
@@ -224,6 +211,39 @@ export default function ReportsPage() {
     { id: 'correlations', label: 'Cross-Module Correlations' },
     { id: 'engineering', label: 'Engineering Impact' },
   ] as const;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Activity size={28} className="text-white" />
+          </div>
+          <p className="text-slate-500 font-bold">Crunching historical data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">
+            <Activity size={28} className="text-rose-500" />
+          </div>
+          <p className="text-slate-700 font-bold text-lg mb-2">Failed to load report</p>
+          <p className="text-slate-400 font-medium text-sm mb-6">Could not fetch analytics data. Please try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-slate-800 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
@@ -324,7 +344,7 @@ export default function ReportsPage() {
                 <StatChip label="Payments Trend" value={`$${((timeSeries.at(-1)?.payments || 0) / 1000).toFixed(0)}K`} color={COLORS.violet} />
               </div>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -348,7 +368,7 @@ export default function ReportsPage() {
                 <StatChip label="Latest Conv. Rate" value={`${timeSeries.at(-1)?.convRate || 0}%`} color={COLORS.emerald} />
               </div>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -368,7 +388,7 @@ export default function ReportsPage() {
             <Card>
               <SectionTitle icon={Zap} title="Pay Module: Goal Attainment Trend" color={COLORS.amber} />
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={payAttainment}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -392,7 +412,7 @@ export default function ReportsPage() {
               <SectionTitle icon={Activity} title="Sales Leads vs. Loan Portfolio Size" color={COLORS.violet} />
               <p className="text-xs text-slate-400 font-bold mb-6 -mt-2">Each dot = one day. Bubble size = conversion rate. Shows whether higher sales activity correlates with larger loan books.</p>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ScatterChart>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="x" name="Total Leads" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: 'Total Leads', position: 'insideBottom', offset: -2, fontSize: 10, fill: '#94a3b8' }} />
@@ -410,7 +430,7 @@ export default function ReportsPage() {
               <SectionTitle icon={DollarSign} title="Payables vs. Receivables — Gap Analysis" color={COLORS.rose} />
               <p className="text-xs text-slate-400 font-bold mb-6 -mt-2">A positive gap (Receivables {'>'} Payables) indicates healthy cash flow. Negative gap signals liquidity risk.</p>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -430,7 +450,7 @@ export default function ReportsPage() {
               <SectionTitle icon={Users} title="Sales Conversions vs. Pay Module Activity" color={COLORS.blue} />
               <p className="text-xs text-slate-400 font-bold mb-6 -mt-2">Are customers who convert from sales also activating Pay? This shows temporal alignment between the two modules.</p>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -459,7 +479,7 @@ export default function ReportsPage() {
               </p>
               {engProjects.length > 0 ? (
                 <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart data={engProjects} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                       <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
@@ -486,7 +506,7 @@ export default function ReportsPage() {
               <SectionTitle icon={Activity} title="LCY vs. FCY Transfer Volume Over Time" color={COLORS.amber} />
               <p className="text-xs text-slate-400 font-bold mb-6 -mt-2">Local currency vs. foreign currency transfer trends — shows product adoption split between domestic and international users.</p>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={timeSeries}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />

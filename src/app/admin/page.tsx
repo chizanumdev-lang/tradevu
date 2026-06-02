@@ -982,7 +982,7 @@ export default function AdminPage() {
                       })}
                       
                       <div className="pt-2 text-[14px] text-slate-500 font-medium">
-                        Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
+                        Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
                       </div>
                     </div>
                   </div>
@@ -1125,7 +1125,7 @@ export default function AdminPage() {
                             </div>
                             
                             <div className="pt-2 text-[14px] text-slate-500 font-medium">
-                              Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
+                              Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
                             </div>
                           </div>
                         );
@@ -1283,7 +1283,7 @@ export default function AdminPage() {
                                 <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
                                   <input 
                                     type="text"
-                                    value={metric.defaultRate || ''}
+                                    value={metric.defaultRate !== undefined && metric.defaultRate !== null ? metric.defaultRate : ''}
                                     onChange={(e) => updateMetric('defaultRate', Number(e.target.value.replace(/[^0-9.]/g, '')))}
                                     className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
                                     placeholder="--"
@@ -1297,7 +1297,7 @@ export default function AdminPage() {
                       })}
 
                       <div className="pt-2 text-[15px] text-slate-500 font-medium">
-                        Last updated on <span className="font-bold text-slate-700">--</span> by <span className="font-bold text-slate-700">--</span>
+                        Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
                       </div>
                     </div>
                   </div>
@@ -2271,30 +2271,41 @@ function ExchangeRateInput({ currency, value, onCommit }: { currency: string; va
 }
 
 // Helper utilities for flag icons and currency symbols
-const getCcyFlag = (ccy: string) => {
-  switch (ccy) {
-    case 'NGN': return '🇳🇬';
-    case 'USD': return '🇺🇸';
-    case 'USDT': return '🪙';
-    case 'USDC': return '🪙';
-    default: return '🪙';
-  }
-};
-
 const getCcySymbol = (ccy: string) => {
   switch (ccy) {
     case 'NGN': return '₦';
     case 'USD': return '$';
     case 'USDT': return '₮';
-    case 'USDC': return '$';
+    case 'USDC': return '₡';
     default: return '$';
   }
 };
 
 const getCcyIcon = (ccy: string) => {
+  if (ccy === 'USDC') {
+    return (
+      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 select-none overflow-hidden" style={{ background: '#2775CA' }}>
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="16" fill="#2775CA"/>
+          <path d="M20.022 18.124c0-2.124-1.274-2.852-3.821-3.152-1.82-.228-2.184-.684-2.184-1.483 0-.798.592-1.322 1.774-1.322 1.07 0 1.662.367 1.957 1.276a.34.34 0 0 0 .32.228h.73a.33.33 0 0 0 .33-.336v-.046c-.228-1.299-1.254-2.28-2.578-2.394v-1.39a.34.34 0 0 0-.34-.34h-.693a.34.34 0 0 0-.34.34v1.367c-1.606.228-2.624 1.322-2.624 2.668 0 2.01 1.208 2.784 3.755 3.084 1.684.252 2.25.638 2.25 1.575 0 .936-.822 1.574-1.934 1.574-1.527 0-2.056-.638-2.237-1.574-.046-.207-.207-.32-.365-.32h-.776a.33.33 0 0 0-.33.336v.046c.228 1.527 1.254 2.578 2.851 2.828v1.39c0 .183.158.34.34.34h.693a.34.34 0 0 0 .34-.34v-1.39c1.64-.25 2.72-1.413 2.72-2.8z" fill="white"/>
+        </svg>
+      </div>
+    );
+  }
+  if (ccy === 'USDT') {
+    return (
+      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 select-none overflow-hidden" style={{ background: '#26A17B' }}>
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+          <path d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V9H8.595v2.427h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.126 0 1.053 3.309 1.924 7.709 2.126v7.608h3.913v-7.61c4.393-.202 7.694-1.072 7.694-2.124 0-1.052-3.301-1.924-7.694-2.125" fill="white"/>
+        </svg>
+      </div>
+    );
+  }
+  const flags: Record<string, string> = { NGN: '🇳🇬', USD: '🇺🇸' };
   return (
     <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[11px] shadow-sm border border-slate-100 flex-shrink-0 select-none">
-      {getCcyFlag(ccy)}
+      {flags[ccy] ?? '🪙'}
     </div>
   );
 };
