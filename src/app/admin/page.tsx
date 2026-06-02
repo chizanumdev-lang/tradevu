@@ -545,137 +545,182 @@ export default function AdminPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center">
-      <div className="text-2xl font-black animate-pulse text-primary">Syncing Console...</div>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <Image src="/white-icon.svg" alt="Tradevu" width={32} height={32} />
+          </div>
+          <div className="absolute inset-0 rounded-2xl animate-ping bg-primary/20" style={{ animationDuration: '2s' }} />
+        </div>
+        <div className="text-center">
+          <div className="text-white font-bold text-lg tracking-tight">Tradevu Console</div>
+          <div className="text-slate-500 text-sm mt-1">Syncing data…</div>
+        </div>
+      </div>
     </div>
   );
 
   if (error) return (
-    <div className="min-h-screen bg-rose-50 flex flex-col items-center justify-center p-6 text-center">
-      <Activity className="text-rose-600 mb-4" size={48} />
-      <h2 className="text-2xl font-black text-slate-900 mb-2">Sync Failed</h2>
-      <p className="text-rose-600 mb-8 max-w-md">{error}</p>
-      <button onClick={() => window.location.reload()} className="btn-primary px-8">Retry</button>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+      <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-6">
+        <Activity className="text-rose-400" size={28} />
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-2">Connection failed</h2>
+      <p className="text-slate-400 mb-8 max-w-md text-sm leading-relaxed">{error}</p>
+      <button onClick={() => window.location.reload()} className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors text-sm">
+        Retry connection
+      </button>
     </div>
   );
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-[#F8F9FE] flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl p-12 border border-slate-100 animate-in fade-in zoom-in duration-500">
-          <div className="flex justify-center mb-10">
-            <div className="w-20 h-20 bg-primary/5 rounded-[32px] flex items-center justify-center shadow-2xl shadow-primary/10 border border-primary/10 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Image src="/main-icon.svg" alt="Tradevu" width={48} height={48} className="relative z-10" />
+      <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}>
+        {/* Left decorative panel */}
+        <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(99,102,241,0.3) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(168,85,247,0.2) 0%, transparent 50%)' }} />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-16">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/15">
+                <Image src="/white-icon.svg" alt="Tradevu" width={22} height={22} />
+              </div>
+              <span className="text-white font-bold text-lg tracking-tight">Tradevu</span>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white leading-tight mb-4">
+                Operating<br />Scoreboard
+              </h1>
+              <p className="text-slate-400 text-base leading-relaxed max-w-xs">
+                Real-time visibility into every metric that drives Tradevu forward.
+              </p>
             </div>
           </div>
-          
-          <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tight">Admin Console</h1>
-          <p className="text-slate-500 text-center font-medium mb-10">Access the Tradevu Operating Scoreboard.</p>
-          
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-              <div className="relative">
-                <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="email" 
-                  required
-                  placeholder="name@tradevu.co"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
-                />
+          <div className="relative z-10 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-slate-500 text-xs tracking-wide">All systems operational</span>
+          </div>
+        </div>
+
+        {/* Right login panel */}
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-sm">
+            {/* Mobile logo */}
+            <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
+              <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center border border-white/15">
+                <Image src="/white-icon.svg" alt="Tradevu" width={20} height={20} />
               </div>
+              <span className="text-white font-bold text-lg">Tradevu</span>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  required
-                  placeholder="••••••••"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-1.5">Admin console</h2>
+              <p className="text-slate-500 text-sm">Sign in with your work credentials to continue.</p>
             </div>
-            
-            {loginError && (
-              <div className="p-4 bg-rose-50 text-rose-600 text-xs font-bold text-center rounded-xl animate-shake">
-                {loginError}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email address</label>
+                <div className="relative">
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="name@tradevu.co"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm font-medium"
+                  />
+                </div>
               </div>
-            )}
-            
-            <button type="submit" className="w-full py-5 bg-primary text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-              Sign In <ArrowRight size={18} />
-            </button>
-          </form>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    required
+                    placeholder="Enter your password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                    className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all text-sm font-medium"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              
+              {loginError && (
+                <div className="flex items-center gap-2.5 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl">
+                  <Activity size={14} className="shrink-0" />
+                  {loginError}
+                </div>
+              )}
+              
+              <button type="submit" className="w-full py-3 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2 mt-2">
+                Sign in <ArrowRight size={15} />
+              </button>
+            </form>
+
+            <p className="text-center text-slate-600 text-xs mt-8">
+              Access restricted to authorised personnel only.
+            </p>
+          </div>
         </div>
 
         {/* Forced Password Change Modal */}
         {passwordChangeUser && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
-            <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl p-12 border border-slate-100 animate-in fade-in zoom-in duration-300">
-              <h2 className="text-2xl font-black text-slate-900 text-center mb-2 tracking-tight">Change Password</h2>
-              <p className="text-slate-500 text-center font-medium mb-10">This is your first time signing in. You must change your password to proceed.</p>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
+            <div className="w-full max-w-md bg-[#1e293b] border border-white/10 rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in duration-300">
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 mb-6 mx-auto">
+                <Key size={20} className="text-primary" />
+              </div>
+              <h2 className="text-xl font-bold text-white text-center mb-1.5">Create new password</h2>
+              <p className="text-slate-500 text-center text-sm mb-8">For security, please set a new password before continuing.</p>
               
-              <form onSubmit={handlePasswordChange} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">New password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       type={showPassword ? "text" : "password"} 
                       required
-                      placeholder="••••••••"
+                      placeholder="Enter new password"
                       value={passwordChangeForm.newPassword}
                       onChange={(e) => setPasswordChangeForm({...passwordChangeForm, newPassword: e.target.value})}
-                      className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                     />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      required
-                      placeholder="••••••••"
-                      value={passwordChangeForm.confirmPassword}
-                      onChange={(e) => setPasswordChangeForm({...passwordChangeForm, confirmPassword: e.target.value})}
-                      className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-slate-900 transition-all"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Confirm password</label>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    required
+                    placeholder="Confirm new password"
+                    value={passwordChangeForm.confirmPassword}
+                    onChange={(e) => setPasswordChangeForm({...passwordChangeForm, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
+                  />
                 </div>
 
                 {passwordChangeError && (
-                  <div className="p-4 bg-rose-50 text-rose-600 text-xs font-bold text-center rounded-xl animate-shake">
+                  <div className="flex items-center gap-2.5 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl">
+                    <Activity size={14} className="shrink-0" />
                     {passwordChangeError}
                   </div>
                 )}
 
-                <button type="submit" className="w-full py-5 bg-primary text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-                  Update Password <Check size={18} />
+                <button type="submit" className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2">
+                  Set password <Check size={15} />
                 </button>
               </form>
             </div>
@@ -696,55 +741,65 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
       {/* ── Fixed Admin Header ────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white z-[100] px-10 flex items-center justify-between border-b border-slate-800 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
-              <Image src="/white-icon.svg" alt="Tradevu" width={24} height={24} />
+      <nav className="fixed top-0 left-0 right-0 h-14 z-[100] px-6 flex items-center justify-between" style={{ background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Left */}
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-white/8 rounded-lg flex items-center justify-center border border-white/8">
+              <Image src="/white-icon.svg" alt="Tradevu" width={16} height={16} />
             </div>
-            <span className="font-black text-lg tracking-tight uppercase">Admin Console</span>
+            <span className="font-semibold text-white text-sm tracking-tight">Tradevu Console</span>
           </div>
-          
-          <div className="h-6 w-px bg-slate-700" />
-          
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Edit Mode</span>
+
+          <div className="h-4 w-px bg-white/10" />
+
+          {/* Edit Mode toggle */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Edit</span>
             <button 
               onClick={() => setEditMode(!editMode)}
-              className={`w-12 h-6 rounded-full relative transition-all duration-300 ${editMode ? 'bg-primary' : 'bg-slate-700'}`}
+              className={`relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none ${editMode ? 'bg-primary' : 'bg-white/10'}`}
             >
-              <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${editMode ? 'translate-x-6' : ''}`} />
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${editMode ? 'translate-x-5' : ''}`} />
             </button>
           </div>
 
           <button 
             onClick={() => handleOpenEdit('settings')}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all border border-slate-700"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/8 transition-all text-xs font-medium border border-transparent hover:border-white/10"
           >
-            <Settings size={14} className="text-slate-400" />
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-200">Settings</span>
+            <Settings size={13} />
+            Settings
           </button>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[11px] font-black leading-none">{currentUser?.name}</div>
-              <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{currentUser ? ROLE_LABELS[currentUser.role] : ''}</div>
+        {/* Right */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+              <span className="text-[11px] font-bold text-primary">{currentUser?.name?.[0]}</span>
             </div>
-            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white transition-colors">
-              <LogOut size={18} />
-            </button>
+            <div className="text-right hidden sm:block">
+              <div className="text-xs font-semibold text-white leading-none">{currentUser?.name}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">{currentUser ? ROLE_LABELS[currentUser.role] : ''}</div>
+            </div>
           </div>
+          <div className="h-4 w-px bg-white/10" />
+          <button onClick={handleLogout} className="flex items-center gap-1.5 text-slate-500 hover:text-white transition-colors text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-white/8">
+            <LogOut size={13} />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
         </div>
       </nav>
 
       {/* ── Main Mirror View ───────────────────────────────────────────── */}
-      <main className="max-w-[1680px] mx-auto px-6 pt-28 pb-20 relative">
+      <main className="max-w-[1680px] mx-auto px-6 pt-24 pb-20 relative">
         {message && (
-          <div className={`fixed top-20 right-10 z-[110] px-6 py-4 rounded-2xl border shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300 flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'}`}>
-            {message.type === 'success' ? <CheckCircle2 size={18} /> : <Activity size={18} />}
-            <span className="text-sm font-black uppercase tracking-tight">{message.text}</span>
+          <div className={`fixed top-16 right-6 z-[110] px-5 py-3.5 rounded-xl border shadow-xl animate-in fade-in slide-in-from-right-3 duration-300 flex items-center gap-2.5 text-sm font-semibold ${
+            message.type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-rose-950 border-rose-800 text-rose-300'
+          }`}>
+            {message.type === 'success' ? <CheckCircle2 size={15} /> : <Activity size={15} />}
+            {message.text}
           </div>
         )}
 
@@ -885,21 +940,24 @@ export default function AdminPage() {
 
       {/* ── Edit Modal ────────────────────────────────────────────────── */}
       {isModalOpen && metrics && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[40px] w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="h-2 w-full bg-primary" />
-            <div className="p-10">
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2 uppercase">Update {editingSection}</h2>
-                  <p className="text-slate-500 font-medium">Modify operational parameters for this department.</p>
-                </div>
-                <button onClick={() => { setIsModalOpen(false); setEditingDept(null); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                  <X size={24} className="text-slate-400" />
-                </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Modal header */}
+            <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Edit section</div>
+                <h2 className="text-lg font-bold text-slate-900 capitalize">{editingSection}</h2>
               </div>
+              <button 
+                onClick={() => { setIsModalOpen(false); setEditingDept(null); }} 
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              >
+                <X size={16} className="text-slate-500" />
+              </button>
+            </div>
 
-              <div className="space-y-6 max-h-[65vh] overflow-y-auto px-1 pr-4 custom-scrollbar">
+            <div className="px-8 py-6">
+              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 {editingSection === 'revenue' && (
                   <>
                     <InputGroup label="Annual Goal ($)" value={metrics.revenueAnnual.goal} onChange={(v) => setMetrics({...metrics, revenueAnnual: {...metrics.revenueAnnual, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
@@ -2010,20 +2068,20 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="mt-10 flex gap-4">
+              <div className="mt-6 pt-5 border-t border-slate-100 flex gap-3">
                 <button 
                   onClick={() => { setIsModalOpen(false); setEditingDept(null); }}
-                  className="flex-1 py-5 bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-100 transition-all"
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSave}
                   disabled={!!savingSection}
-                  className="flex-1 py-5 bg-primary text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="flex-1 py-3 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {savingSection ? <RefreshCcw className="animate-spin" size={16} /> : <Save size={16} />}
-                  Confirm Changes
+                  {savingSection ? <RefreshCcw className="animate-spin" size={14} /> : <Save size={14} />}
+                  Save changes
                 </button>
               </div>
             </div>
