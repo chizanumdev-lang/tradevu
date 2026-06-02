@@ -99,6 +99,12 @@ export default function AdminPage() {
   const [editingUserEmail, setEditingUserEmail] = useState<string | null>(null);
   const [isRatesCollapsed, setIsRatesCollapsed] = useState(true);
 
+  // Per-section last-updated-by tracking (persisted in localStorage)
+  const [sectionLastUpdated, setSectionLastUpdated] = useState<Record<string, { name: string; timestamp: string }>>(() => {
+    if (typeof window === 'undefined') return {};
+    try { return JSON.parse(localStorage.getItem('tradevu_section_updates') || '{}'); } catch { return {}; }
+  });
+
   // Modal selector states
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'NGN' | 'USDT' | 'USDC'>('NGN');
   const [selectedMonth, setSelectedMonth] = useState<'May'>('May');
@@ -514,6 +520,15 @@ export default function AdminPage() {
       }
 
       setMessage({ type: 'success', text: `${editingSection.toUpperCase()} updated successfully.` });
+      // Record who updated this section
+      if (currentUser && editingSection) {
+        const updated = {
+          ...sectionLastUpdated,
+          [editingSection]: { name: currentUser.name, timestamp: new Date().toISOString() }
+        };
+        setSectionLastUpdated(updated);
+        try { localStorage.setItem('tradevu_section_updates', JSON.stringify(updated)); } catch {}
+      }
       setIsModalOpen(false);
       setEditingDept(null);
       fetchDashboard();
@@ -962,9 +977,12 @@ export default function AdminPage() {
                                 <input 
                                   type="text"
                                   value={metric.leadsGenerated || ''}
+                                  placeholder={String(metric.leadsGenerated || 0)}
                                   onChange={(e) => updateVal('leadsGenerated', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                  onFocus={(e) => { e.target.value = ''; }}
+                                  onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.leadsGenerated || 0); }}
                                   disabled={!isCeoOrPm}
-                                  className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                  className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all placeholder:text-slate-300 ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
                                 />
                               </div>
                               <div className="space-y-1.5">
@@ -972,8 +990,11 @@ export default function AdminPage() {
                                 <input 
                                   type="text"
                                   value={metric.conversions || ''}
+                                  placeholder={String(metric.conversions || 0)}
                                   onChange={(e) => updateVal('conversions', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                  className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                  onFocus={(e) => { e.target.value = ''; }}
+                                  onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.conversions || 0); }}
+                                  className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm placeholder:text-slate-300"
                                 />
                               </div>
                             </div>
@@ -982,7 +1003,11 @@ export default function AdminPage() {
                       })}
                       
                       <div className="pt-2 text-[14px] text-slate-500 font-medium">
-                        Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
+                        {sectionLastUpdated['sales'] ? (
+                          <>Last updated by <span className="font-bold text-slate-700">{sectionLastUpdated['sales'].name}</span> on <span className="font-bold text-slate-700">{new Date(sectionLastUpdated['sales'].timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span></>
+                        ) : (
+                          <>Last synced on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span></>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1051,9 +1076,12 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.weeklyGoal || ''}
+                                    placeholder={String(metric.weeklyGoal || 0)}
                                     onChange={(e) => updatePayMetric('weeklyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.weeklyGoal || 0); }}
                                     disabled={!isCeoOrPm}
-                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all placeholder:text-slate-300 ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
                                   />
                                 </div>
                                 <div className="space-y-1.5">
@@ -1061,8 +1089,11 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.conversations || ''}
+                                    placeholder={String(metric.conversations || 0)}
                                     onChange={(e) => updatePayMetric('conversations', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.conversations || 0); }}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm placeholder:text-slate-300"
                                   />
                                 </div>
                               </div>
@@ -1079,9 +1110,12 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.lcyGoal || ''}
+                                    placeholder={String(metric.lcyGoal || 0)}
                                     onChange={(e) => updatePayMetric('lcyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.lcyGoal || 0); }}
                                     disabled={!isCeoOrPm}
-                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all placeholder:text-slate-300 ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
                                   />
                                 </div>
                                 <div className="space-y-1.5">
@@ -1089,8 +1123,11 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.lcyTransfers || ''}
+                                    placeholder={String(metric.lcyTransfers || 0)}
                                     onChange={(e) => updatePayMetric('lcyTransfers', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.lcyTransfers || 0); }}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm placeholder:text-slate-300"
                                   />
                                 </div>
                               </div>
@@ -1107,9 +1144,12 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.fcyGoal || ''}
+                                    placeholder={String(metric.fcyGoal || 0)}
                                     onChange={(e) => updatePayMetric('fcyGoal', Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.fcyGoal || 0); }}
                                     disabled={!isCeoOrPm}
-                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
+                                    className={`w-full px-4 py-3 border border-slate-200/80 rounded-[14px] outline-none font-medium text-[15px] transition-all placeholder:text-slate-300 ${!isCeoOrPm ? 'bg-[#F4F5FA] text-slate-500 cursor-not-allowed' : 'bg-[#F4F5FA] focus:bg-white text-slate-700 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20'}`}
                                   />
                                 </div>
                                 <div className="space-y-1.5">
@@ -1117,15 +1157,22 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.fcyTransfers || ''}
+                                    placeholder={String(metric.fcyTransfers || 0)}
                                     onChange={(e) => updatePayMetric('fcyTransfers', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm"
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.fcyTransfers || 0); }}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-[14px] outline-none font-medium text-slate-700 text-[15px] transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 shadow-sm placeholder:text-slate-300"
                                   />
                                 </div>
                               </div>
                             </div>
                             
                             <div className="pt-2 text-[14px] text-slate-500 font-medium">
-                              Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
+                              {sectionLastUpdated['pay'] ? (
+                                <>Last updated by <span className="font-bold text-slate-700">{sectionLastUpdated['pay'].name}</span> on <span className="font-bold text-slate-700">{new Date(sectionLastUpdated['pay'].timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span></>
+                              ) : (
+                                <>Last synced on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span></>
+                              )}
                             </div>
                           </div>
                         );
@@ -1248,13 +1295,14 @@ export default function AdminPage() {
                                 <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
                                   <span className="font-medium text-slate-800 mr-1 text-[15px]">{symbol}</span>
                                   <input 
-                                    type="text"
-                                    value={formattedValue || (metric.loanValue === 0 ? '0' : '')}
-                                    onChange={(e) => updateMetric('loanValue', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
-                                    placeholder="0"
+                                    type="number"
+                                    step="any"
+                                    value={metric.loanValue === 0 ? '' : metric.loanValue}
+                                    placeholder={String(metric.loanValue || 0)}
+                                    onChange={(e) => updateMetric('loanValue', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                                    onFocus={(e) => e.target.select()}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-slate-300"
                                   />
-                                  <span className="text-indigo-400/80 font-medium text-[15px] ml-2">.00</span>
                                 </div>
                                 {selectedCurrency !== 'USD' && (
                                   <div className="text-slate-500 text-[13px]">
@@ -1270,9 +1318,11 @@ export default function AdminPage() {
                                   <input 
                                     type="text"
                                     value={metric.loanCount || ''}
+                                    placeholder={String(metric.loanCount || 0)}
                                     onChange={(e) => updateMetric('loanCount', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
-                                    placeholder="--"
+                                    onFocus={(e) => { e.target.value = ''; }}
+                                    onBlur={(e) => { if (e.target.value === '') e.target.value = String(metric.loanCount || 0); }}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px] placeholder:text-slate-300"
                                   />
                                 </div>
                               </div>
@@ -1282,11 +1332,15 @@ export default function AdminPage() {
                                 <label className="text-[14px] text-slate-500 font-medium">Default rate</label>
                                 <div className="relative flex items-center bg-white border border-slate-200/60 rounded-[14px] px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
                                   <input 
-                                    type="text"
+                                    type="number"
+                                    step="any"
+                                    min="0"
+                                    max="100"
                                     value={metric.defaultRate !== undefined && metric.defaultRate !== null ? metric.defaultRate : ''}
-                                    onChange={(e) => updateMetric('defaultRate', Number(e.target.value.replace(/[^0-9.]/g, '')))}
-                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px]"
-                                    placeholder="--"
+                                    placeholder={String(metric.defaultRate ?? 0)}
+                                    onChange={(e) => updateMetric('defaultRate', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                                    onFocus={(e) => e.target.select()}
+                                    className="w-full bg-transparent outline-none font-medium text-slate-800 text-[15px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-slate-300"
                                   />
                                   <span className="text-indigo-400/80 font-medium text-[15px] ml-2">%</span>
                                 </div>
@@ -1297,7 +1351,11 @@ export default function AdminPage() {
                       })}
 
                       <div className="pt-2 text-[15px] text-slate-500 font-medium">
-                        Last updated on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span>
+                        {sectionLastUpdated['finance'] ? (
+                          <>Last updated by <span className="font-bold text-slate-700">{sectionLastUpdated['finance'].name}</span> on <span className="font-bold text-slate-700">{new Date(sectionLastUpdated['finance'].timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span></>
+                        ) : (
+                          <>Last synced on <span className="font-bold text-slate-700">{metrics.lastUpdateTimestamp ? new Date(metrics.lastUpdateTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '--'}</span></>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2195,6 +2253,12 @@ function InputGroup({
   isTarget?: boolean,
   disabledLabel?: string
 }) {
+  const [draft, setDraft] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const displayValue = isFocused ? draft : (value === 0 || value === '' ? '' : String(value));
+  const placeholderText = String(value) || '—';
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center px-1">
@@ -2207,15 +2271,28 @@ function InputGroup({
       </div>
       <input 
         type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={displayValue}
+        placeholder={disabled ? undefined : placeholderText}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          onChange(e.target.value);
+        }}
+        onFocus={() => {
+          setDraft('');
+          setIsFocused(true);
+        }}
+        onBlur={() => {
+          setIsFocused(false);
+          // If user cleared the field without typing, restore the original
+          if (draft === '') setDraft('');
+        }}
         disabled={disabled}
         className={`w-full px-5 py-4 border rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold transition-all ${
           disabled 
             ? isTarget || disabledLabel
               ? 'bg-[#F5F3FF] text-[#6B21A8] border-[#EDE9FE] cursor-not-allowed font-extrabold'
               : 'bg-slate-50 text-slate-400 border-slate-100 opacity-50 grayscale cursor-not-allowed border-dashed' 
-            : 'bg-slate-50 text-slate-900 border-slate-100'
+            : 'bg-slate-50 text-slate-900 border-slate-100 placeholder:text-slate-300'
         }`}
       />
     </div>
@@ -2302,10 +2379,10 @@ const getCcyIcon = (ccy: string) => {
       </div>
     );
   }
-  const flags: Record<string, string> = { NGN: '🇳🇬', USD: '🇺🇸' };
+  const symbols: Record<string, string> = { NGN: '₦', USD: '$' };
   return (
-    <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[11px] shadow-sm border border-slate-100 flex-shrink-0 select-none">
-      {flags[ccy] ?? '🪙'}
+    <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-bold shadow-sm border border-slate-200 flex-shrink-0 select-none text-slate-700">
+      {symbols[ccy] ?? '$'}
     </div>
   );
 };
