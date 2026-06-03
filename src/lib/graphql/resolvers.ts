@@ -137,15 +137,20 @@ export const resolvers = {
 
     updateCustomers: async (_: unknown, { totalCustomers, monthlyGoal, activeMonthly }: { totalCustomers: number, monthlyGoal: number, activeMonthly: number }) => {
       const supabase = await createClient();
+      const periodStart = new Date().toISOString().substring(0, 7) + '-01';
+
       const { error } = await supabase
         .from('customer_metrics')
-        .insert({
-          total_customers: totalCustomers,
-          monthly_goal: monthlyGoal,
-          active_monthly: activeMonthly,
-          period_start: new Date().toISOString().substring(0, 7) + '-01',
-          recorded_at: new Date().toISOString()
-        });
+        .upsert(
+          {
+            total_customers: totalCustomers,
+            monthly_goal: monthlyGoal,
+            active_monthly: activeMonthly,
+            period_start: periodStart,
+            recorded_at: new Date().toISOString(),
+          },
+          { onConflict: 'period_start' }
+        );
 
       if (error) throw new Error(error.message);
       return queries.fetchCustomerMetrics(supabase);

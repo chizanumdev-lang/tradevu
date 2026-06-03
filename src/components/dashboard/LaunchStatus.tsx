@@ -33,7 +33,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
     if (allSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % allSlides.length);
-    }, 8000); // Minimum 8 seconds
+    }, 20000); // 20 seconds
     return () => clearInterval(interval);
   }, [allSlides.length]);
 

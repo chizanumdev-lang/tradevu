@@ -33,30 +33,13 @@ function toPercent(numerator: number, denominator: number): number {
 export async function fetchCustomerMetrics(
   supabase: SupabaseClient
 ): Promise<CustomerMetrics> {
-  // 1. Fetch live total count from customers table
-  const { count: totalCount, error: totalError } = await supabase
-    .from('customers')
-    .select('*', { count: 'exact', head: true });
-
-  if (totalError) console.warn('customers total count:', totalError.message);
-
-  // 2. Fetch monthly active users (logged in within last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const { count: activeCount, error: activeError } = await supabase
-    .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .gt('last_logged_in', thirtyDaysAgo.toISOString());
-
-  if (activeError) console.warn('customers active count:', activeError.message);
-
-  // 3. Fetch historical goals and snapshots from customer_metrics
+  // Fetch the two most recent distinct-month snapshots.
+  // updateCustomers upserts by period_start, so each calendar month has exactly
+  // one authoritative row. We order by period_start DESC to get current first.
   const { data: metricsData, error: metricsError } = await supabase
     .from('customer_metrics')
     .select('total_customers, monthly_goal, active_monthly, period_start')
     .order('period_start', { ascending: false })
-    .order('recorded_at', { ascending: false })
     .limit(2);
 
   if (metricsError) console.warn('customer_metrics:', metricsError.message);
@@ -64,20 +47,20 @@ export async function fetchCustomerMetrics(
   const currentSnapshot = metricsData?.[0];
   const previousSnapshot = metricsData?.[1];
 
-  // Use live data if available, fallback to snapshots
-  const currentTotal = totalCount ?? currentSnapshot?.total_customers ?? 342;
-  const currentActive = activeCount ?? currentSnapshot?.active_monthly ?? 100;
-  const previousTotal = previousSnapshot?.total_customers ?? currentTotal;
-  
+  const currentTotal   = currentSnapshot?.total_customers  ?? 0;
+  const currentActive  = currentSnapshot?.active_monthly   ?? 0;
+  const previousActive = previousSnapshot?.active_monthly  ?? currentActive;
+
+  // MoM % change based on approved (active_monthly) which equals approved businesses
   const percentageChange =
-    previousTotal > 0
-      ? Math.round(((currentTotal - previousTotal) / previousTotal) * 100)
+    previousActive > 0
+      ? Math.round(((currentActive - previousActive) / previousActive) * 100)
       : 0;
 
   return {
-    current: currentTotal,
-    goal: currentSnapshot?.monthly_goal ?? 500,
-    activeMonthly: currentActive,
+    current:          currentTotal,
+    goal:             currentSnapshot?.monthly_goal ?? 500,
+    activeMonthly:    currentActive,
     percentageChange,
   };
 }

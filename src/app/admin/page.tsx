@@ -99,6 +99,13 @@ export default function AdminPage() {
   const [editingUserEmail, setEditingUserEmail] = useState<string | null>(null);
   const [isRatesCollapsed, setIsRatesCollapsed] = useState(true);
 
+  // Live business count from API
+  const [businessCountData, setBusinessCountData] = useState<{ total: number | null; approved: number | null; loading: boolean }>({
+    total: null,
+    approved: null,
+    loading: false,
+  });
+
   // Per-section last-updated-by tracking (persisted in localStorage)
   const [sectionLastUpdated, setSectionLastUpdated] = useState<Record<string, { name: string; timestamp: string }>>(() => {
     if (typeof window === 'undefined') return {};
@@ -354,6 +361,35 @@ export default function AdminPage() {
     setEditingSection(section);
     setEditingDept(dept || null);
     setIsModalOpen(true);
+
+    // Fetch live business counts when opening the customers modal
+    if (section === 'customers') {
+      setBusinessCountData({ total: null, approved: null, loading: true });
+      Promise.all([
+        fetch('/api/business/count').then(r => r.json()).catch(() => null),
+        fetch('/api/business/count?status=APPROVED').then(r => r.json()).catch(() => null),
+      ]).then(([totalRes, approvedRes]) => {
+        const total = totalRes?.data?.totalBusinesses ?? null;
+        const approved = approvedRes?.data?.totalBusinesses ?? null;
+
+        setBusinessCountData({ total, approved, loading: false });
+
+        // Reflect live values into the editable metrics so they get saved
+        setMetrics(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            customersMonthly: {
+              ...prev.customersMonthly,
+              ...(total !== null ? { current: total } : {}),
+              ...(approved !== null ? { activeMonthly: approved } : {}),
+            },
+          };
+        });
+      }).catch(() => {
+        setBusinessCountData({ total: null, approved: null, loading: false });
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -970,6 +1006,29 @@ export default function AdminPage() {
                     <InputGroup label="Monthly Goal" value={metrics.customersMonthly.goal} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, goal: Number(v)}})} disabled={currentUser?.role !== 'CEO'} />
                     <InputGroup label="Total Customers" value={metrics.customersMonthly.current} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, current: Number(v)}})} disabled={true} disabledLabel="AUTO SYNCED" />
                     <InputGroup label="Active Monthly" value={metrics.customersMonthly.activeMonthly} onChange={(v) => setMetrics({...metrics, customersMonthly: {...metrics.customersMonthly, activeMonthly: Number(v)}})} disabled={true} disabledLabel="AUTO SYNCED" />
+                    {/* Live API data */}
+                    <div className="border-t border-slate-100 pt-4 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live from API</span>
+                        {businessCountData.loading && (
+                          <span className="text-[9px] font-bold text-primary uppercase tracking-wider animate-pulse">Fetching…</span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-[#F5F3FF] border border-[#EDE9FE] rounded-2xl px-5 py-4">
+                          <div className="text-[9px] font-black text-[#7C3AED] uppercase tracking-widest mb-1">Total Businesses</div>
+                          <div className="text-[22px] font-extrabold text-[#6B21A8] leading-none">
+                            {businessCountData.loading ? '—' : (businessCountData.total !== null ? businessCountData.total.toLocaleString() : 'N/A')}
+                          </div>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-4">
+                          <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Approved</div>
+                          <div className="text-[22px] font-extrabold text-emerald-700 leading-none">
+                            {businessCountData.loading ? '—' : (businessCountData.approved !== null ? businessCountData.approved.toLocaleString() : 'N/A')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
 
