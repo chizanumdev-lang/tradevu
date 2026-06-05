@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createAdminClient } from '@/utils/supabase/server';
 import * as queries from '@/lib/queries';
 
 export const resolvers = {
@@ -86,7 +86,7 @@ export const resolvers = {
 
   Mutation: {
     updateRevenue: async (_: unknown, { goal, current, fiscalYear }: { goal: number, current: number, fiscalYear?: number }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       const year = fiscalYear ?? new Date().getFullYear();
 
       const { data: existing } = await supabase
@@ -136,7 +136,7 @@ export const resolvers = {
     },
 
     updateCustomers: async (_: unknown, { totalCustomers, monthlyGoal, activeMonthly }: { totalCustomers: number, monthlyGoal: number, activeMonthly: number }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       const periodStart = new Date().toISOString().substring(0, 7) + '-01';
 
       const { error } = await supabase
@@ -157,19 +157,19 @@ export const resolvers = {
     },
 
     updateSales: async (_: unknown, { metrics }: { metrics: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.updateSalesMarketing(supabase, metrics);
       return queries.fetchSalesMarketing(supabase);
     },
 
     updatePay: async (_: unknown, { metrics }: { metrics: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.updatePay(supabase, metrics);
       return queries.fetchPay(supabase);
     },
 
     updateLaunchStatus: async (_: unknown, { phases }: { phases: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       const recordedAt = new Date().toISOString();
       
       const rows = [];
@@ -192,13 +192,13 @@ export const resolvers = {
     },
 
     updateFinance: async (_: unknown, { metrics, exchangeRates }: { metrics: any[], exchangeRates: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.updateFinance(supabase, metrics, exchangeRates);
       return queries.fetchFinance(supabase);
     },
 
     updateEngineering: async (_: unknown, { projects, health }: { projects: any[], health: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       
       // Update projects
       if (projects) {
@@ -264,7 +264,7 @@ export const resolvers = {
     },
 
     updateSettings: async (_: unknown, args: { scrollSpeed: number, scrollEnabled: boolean, dashboardTitle?: string, launchStatusTitle?: string, departments?: any[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.updateDashboardSettings(supabase, {
         scrollSpeed: args.scrollSpeed,
         scrollEnabled: args.scrollEnabled,
@@ -276,7 +276,7 @@ export const resolvers = {
     },
 
     upsertUser: async (_: unknown, { user }: { user: any }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.upsertSingleUser(supabase, {
         email: user.email,
         name: user.name,
@@ -290,14 +290,14 @@ export const resolvers = {
     },
 
     updateUserPermissions: async (_: unknown, { email, role, permissions }: { email: string, role: string, permissions: string[] }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       await queries.updateUserPermissions(supabase, email, role, permissions);
       const users = await queries.fetchDashboardUsers(supabase);
       return users.find(u => u.email === email)!;
     },
 
     deleteUser: async (_: unknown, { email }: { email: string }) => {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
       const { error } = await supabase.from('dashboard_users').delete().eq('email', email);
       if (error) throw new Error(error.message);
       return true;
