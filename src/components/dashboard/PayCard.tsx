@@ -21,16 +21,18 @@ export const PayCard: React.FC<PayCardProps> = ({
   const metricsList = data?.metrics || [];
   const activeMetric = metricsList.find(m => m.period === timeFilter) || {
     period: timeFilter,
-    weeklyGoal: 10,
-    conversations: 28,
-    usersConverted: 2,
-    lcyTransfers: 1,
-    lcyGoal: 2,
-    fcyTransfers: 5,
-    fcyGoal: 2,
+    weeklyGoal: 0,
+    conversations: 0,
+    usersConverted: 0,
+    lcyTransfers: 0,
+    lcyGoal: 0,
+    fcyTransfers: 0,
+    fcyGoal: 0,
   };
 
-  const progress = Math.min(Math.round((activeMetric.conversations / activeMetric.weeklyGoal) * 100), 100);
+  const progress = activeMetric.weeklyGoal > 0 
+    ? Math.min(Math.round((activeMetric.conversations / activeMetric.weeklyGoal) * 100), 100)
+    : 0;
   const conversionRate = activeMetric.conversations > 0 
     ? (activeMetric.usersConverted / activeMetric.conversations) * 100 
     : 0;

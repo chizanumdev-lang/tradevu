@@ -92,9 +92,9 @@ export const SalesCard: React.FC<SalesCardProps> = ({
 
   // Goals: use actual data from month row as a proxy for goal if available
   const leadsGoal = timeFilter === 'week'
-    ? (monthTotals.leads > 0 ? Math.round(monthTotals.leads / 4.33) : 10)
-    : (monthTotals.leads > 0 ? monthTotals.leads : 100);
-  const progress = Math.min(Math.round((totalLeads / leadsGoal) * 100), 100);
+    ? (monthTotals.leads > 0 ? Math.round(monthTotals.leads / 4.33) : 0)
+    : (monthTotals.leads > 0 ? monthTotals.leads : 0);
+  const progress = leadsGoal > 0 ? Math.min(Math.round((totalLeads / leadsGoal) * 100), 100) : 0;
 
   // WoW / MoM trend for conversions
   const conversionTrend = calcTrend(weekTotals.conversions, monthTotals.conversions, timeFilter);

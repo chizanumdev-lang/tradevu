@@ -16,7 +16,7 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({
   activeMonthly, 
   trend,
 }) => {
-  const progress = Math.min(Math.round((total / goal) * 100), 100);
+  const progress = goal > 0 ? Math.min(Math.round((total / goal) * 100), 100) : 0;
 
   const isPositive = trend > 0;
   const isNegative = trend < 0;

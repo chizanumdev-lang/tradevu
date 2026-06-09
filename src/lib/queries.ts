@@ -59,7 +59,7 @@ export async function fetchCustomerMetrics(
 
   return {
     current:          currentTotal,
-    goal:             currentSnapshot?.monthly_goal ?? 500,
+    goal:             currentSnapshot?.monthly_goal ?? 0,
     activeMonthly:    currentActive,
     percentageChange,
   };
@@ -79,12 +79,14 @@ export async function fetchRevenueAnnual(
     .limit(1)
     .single();
 
-  if (error) {
-    console.warn('revenue_annual:', error.message);
+  if (error || !data) {
+    if (error && error.code !== 'PGRST116') {
+      console.warn('revenue_annual:', error.message);
+    }
     return {
-      goal: 1000000,
-      current: 750000,
-      percentage: 75,
+      goal: 0,
+      current: 0,
+      percentage: 0,
     };
   }
 
@@ -110,11 +112,7 @@ export async function fetchLaunchStatus(
   if (error) {
     console.warn('launch_readiness:', error.message);
     return {
-      current: { phase: 'Q2', progress: 56, deptTargets: [
-        { name: 'Operations', progress: 64 },
-        { name: 'Pay', progress: 48 },
-        { name: 'Engineering', progress: 55 }
-      ], label: 'Q2' },
+      current: { phase: 'N/A', progress: 0, deptTargets: [], label: 'N/A' },
       history: []
     };
   }
@@ -146,7 +144,7 @@ export async function fetchLaunchStatus(
   });
 
   return {
-    current: allQuarters[0] || { phase: 'Q2', progress: 0, deptTargets: [] },
+    current: allQuarters[0] || { phase: 'N/A', progress: 0, deptTargets: [], label: 'N/A' },
     history: allQuarters.slice(1)
   };
 }
@@ -160,14 +158,7 @@ export async function fetchSalesMarketing(
 
   if (error) {
     console.warn('sales_marketing:', error.message);
-    return [
-      { touchpoint: 'LinkedIn', period: 'week', leadsGenerated: 45, conversions: 12 },
-      { touchpoint: 'Website', period: 'week', leadsGenerated: 89, conversions: 24 },
-      { touchpoint: 'X', period: 'week', leadsGenerated: 22, conversions: 5 },
-      { touchpoint: 'LinkedIn', period: 'month', leadsGenerated: 180, conversions: 48 },
-      { touchpoint: 'Website', period: 'month', leadsGenerated: 350, conversions: 96 },
-      { touchpoint: 'X', period: 'month', leadsGenerated: 100, conversions: 25 },
-    ];
+    return [];
   }
 
   const latestMap = new Map<string, any>();
@@ -277,12 +268,7 @@ export async function fetchFinance(
     // Return empty but consistent structure
     return { 
       metrics: [], 
-      exchangeRates: [
-        { currency: 'USD', rateToUsd: 1.0 },
-        { currency: 'NGN', rateToUsd: 0.00065 },
-        { currency: 'USDT', rateToUsd: 1.0 },
-        { currency: 'USDC', rateToUsd: 1.0 }
-      ] 
+      exchangeRates: [] 
     };
   }
 
@@ -363,14 +349,8 @@ export async function fetchEngineering(
   if (projectsRes.error || healthRes.error) {
     console.warn('engineering:', projectsRes.error?.message || healthRes.error?.message);
     return {
-      projects: [
-        { id: '1', title: 'USD wallets & transfers', name: 'USD wallets & transfers', status: 'Live', dateLabel: 'Deployed', dateValue: 'May 2026', progress: 100, impactScore: 90, eta: 'May 2026', description: 'Deployment of multi-currency stablecoin and USD wallet gateways' },
-        { id: '2', title: 'Pay Partner Dashboard', name: 'Pay Partner Dashboard', status: 'In Development', dateLabel: 'Target', dateValue: 'May 2026', progress: 45, impactScore: 80, eta: 'May 2026', description: 'Onboarding console and metrics interface for Pay service partners' }
-      ],
-      health: [
-        { label: 'Transaction Success', value: '98.2%', isGood: true },
-        { label: 'Downtime (30d)', value: '0.5h', isGood: false }
-      ]
+      projects: [],
+      health: []
     };
   }
 
@@ -491,12 +471,7 @@ export async function fetchDashboardUsers(
 
   if (error) {
     console.warn('dashboard_users:', error.message);
-    // Return hardcoded defaults if table doesn't exist yet
-    return [
-      { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
-      { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
-      { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
-    ];
+    return [];
   }
 
   const users = (data ?? []).map(u => ({
@@ -508,11 +483,7 @@ export async function fetchDashboardUsers(
     requiresPasswordChange: u.requires_password_change
   }));
 
-  return users.length > 0 ? users : [
-    { email: 'nkiru@tradevu.africa', name: 'Nkiru', role: 'CEO', password: 'password123' },
-    { email: 'tola@tradevu.co', name: 'Tola', role: 'HR', password: 'password123' },
-    { email: 'kene@tradevu.co', name: 'Kene', role: 'PM', password: 'password123' },
-  ];
+  return users;
 }
 
 export async function updateDashboardUsers(

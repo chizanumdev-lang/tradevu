@@ -80,7 +80,7 @@ export const LaunchStatus: React.FC<LaunchStatusProps> = ({
         <div className="progress-track h-[6px] mb-12 bg-[#F1F5F9]">
           <div 
             className={`progress-fill h-full transition-all duration-1000 ${currentIndex === 0 ? 'bg-[#7C3AED]' : 'bg-[#94A3B8]'}`} 
-            style={{ width: `${slide.progress || 64}%` }} 
+            style={{ width: `${slide.progress || 0}%` }} 
           />
         </div>
 
