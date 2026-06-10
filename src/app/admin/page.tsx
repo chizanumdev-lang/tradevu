@@ -247,7 +247,7 @@ export default function AdminPage() {
         } else {
           const dashboard = data.dashboard;
           setMetrics(dashboard);
-          if (dashboard.users) setUsers(dashboard.users);
+          if (dashboard.users && dashboard.users.length > 0) setUsers(dashboard.users);
           setError(null);
         }
         setLoading(false);
