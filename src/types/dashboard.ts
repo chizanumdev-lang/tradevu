@@ -63,7 +63,7 @@ export interface LaunchStatus {
 
 export interface SalesMarketingMetric {
   touchpoint: 'LinkedIn' | 'Website' | 'X';
-  period: 'week' | 'month';
+  period: 'week' | 'month' | 'quarter';
   leadsGenerated: number;
   conversions: number;
 }
@@ -77,7 +77,7 @@ export interface TransferMetric {
 }
 
 export interface PayMetric {
-  period: 'week' | 'month';
+  period: 'week' | 'month' | 'quarter';
   weeklyGoal: number;
   conversations: number;
   usersConverted: number;
@@ -97,7 +97,7 @@ export type Currency = 'USD' | 'NGN' | 'USDT' | 'USDC';
 export interface FinanceMetric {
   loanType: LoanType;
   currency: Currency;
-  period: 'week' | 'month';
+  period: 'week' | 'month' | 'quarter';
   loanValue: number;
   loanCount: number;
   defaultRate: number;

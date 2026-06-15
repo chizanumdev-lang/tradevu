@@ -114,10 +114,11 @@ export default function AdminPage() {
 
   // Modal selector states
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'NGN' | 'USDT' | 'USDC'>('NGN');
-  const [selectedMonth, setSelectedMonth] = useState<'May'>('May');
+  const [selectedMonth, setSelectedMonth] = useState<string>('May');
+  const [selectedQuarter, setSelectedQuarter] = useState<'Q1' | 'Q2' | 'Q3' | 'Q4'>('Q2');
   const [selectedStartDate, setSelectedStartDate] = useState<string>(defaultStart);
   const [selectedEndDate, setSelectedEndDate] = useState<string>(defaultEnd);
-  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('week');
 
 
   const hasPermission = (permission: string) => {
@@ -1034,11 +1035,21 @@ export default function AdminPage() {
 
                 {editingSection === 'sales' && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <DropdownSelect
+                        label="Quarter Period"
+                        value={selectedQuarter}
+                        options={['Q1', 'Q2', 'Q3', 'Q4']}
+                        onChange={(v) => {
+                          setSelectedQuarter(v as any);
+                          setSelectedPeriod('quarter');
+                        }}
+                        active={selectedPeriod === 'quarter'}
+                      />
                       <DropdownSelect
                         label="Month Period"
                         value={selectedMonth}
-                        options={['May']}
+                        options={['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']}
                         onChange={(v) => {
                           setSelectedMonth(v);
                           setSelectedPeriod('month');
@@ -1081,7 +1092,7 @@ export default function AdminPage() {
                           setMetrics({ ...metrics, salesMarketing: updated });
                         };
 
-                        const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM';
+                        const isCeoOrPm = currentUser?.role === 'CEO' || currentUser?.role === 'PM' || currentUser?.role === 'MARKETING';
 
                         return (
                           <div key={touchpoint} className="flex flex-col gap-3">
@@ -1132,11 +1143,21 @@ export default function AdminPage() {
 
                 {editingSection === 'pay' && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <DropdownSelect
+                        label="Quarter Period"
+                        value={selectedQuarter}
+                        options={['Q1', 'Q2', 'Q3', 'Q4']}
+                        onChange={(v) => {
+                          setSelectedQuarter(v as any);
+                          setSelectedPeriod('quarter');
+                        }}
+                        active={selectedPeriod === 'quarter'}
+                      />
                       <DropdownSelect
                         label="Month Period"
                         value={selectedMonth}
-                        options={['May']}
+                        options={['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']}
                         onChange={(v) => {
                           setSelectedMonth(v);
                           setSelectedPeriod('month');
@@ -1336,7 +1357,7 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                       <DropdownSelect
                         label="Currency"
                         value={selectedCurrency}
@@ -1345,9 +1366,19 @@ export default function AdminPage() {
                         getIcon={getCcyIcon}
                       />
                       <DropdownSelect
+                        label="Quarter Period"
+                        value={selectedQuarter}
+                        options={['Q1', 'Q2', 'Q3', 'Q4']}
+                        onChange={(v) => {
+                          setSelectedQuarter(v as any);
+                          setSelectedPeriod('quarter');
+                        }}
+                        active={selectedPeriod === 'quarter'}
+                      />
+                      <DropdownSelect
                         label="Month Period"
                         value={selectedMonth}
-                        options={['May']}
+                        options={['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']}
                         onChange={(v) => {
                           setSelectedMonth(v);
                           setSelectedPeriod('month');
